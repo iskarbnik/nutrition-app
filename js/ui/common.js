@@ -21,18 +21,10 @@ function showStatus(el, text, ok) {
   if (ok) el._t = setTimeout(() => { el.textContent = ''; }, 2500);
 }
 
-// כפתור מחיקה בשתי לחיצות: "מחיקה" ← "בטוח?"
-function twoTap(btn, onConfirm, label = 'מחיקה') {
+// כפתור לפעולה שאי אפשר לבטל: לחיצה אחת פותחת חלון אישור
+function confirmTap(btn, onConfirm, label = 'מחיקה', question = 'בטוח שרוצים למחוק?') {
   btn.textContent = label;
-  btn.addEventListener('click', () => {
-    if (!btn.classList.contains('sure')) {
-      btn.classList.add('sure');
-      btn.textContent = 'בטוח?';
-      setTimeout(() => { btn.classList.remove('sure'); btn.textContent = label; }, 3000);
-      return;
-    }
-    onConfirm();
-  });
+  btn.addEventListener('click', () => UI.confirm(question, label, onConfirm));
 }
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -78,6 +70,18 @@ const UI = {
     dismiss() {
       if (!this.locked) this.close();
     },
+  },
+  // חלון אישור מעל הכל, גם מעל חלונית פתוחה. ביטול, לחיצה בחוץ או "חזרה" לא עושים כלום
+  confirm(question, yesLabel, onYes) {
+    const dlg = $('#confirm');
+    $('#confirm-q').textContent = question;
+    const yes = $('#confirm-yes');
+    yes.textContent = yesLabel;
+    yes.onclick = () => { dlg.close(); onYes(); };
+    $('#confirm-no').onclick = () => dlg.close();
+    dlg.onclick = e => { if (e.target === dlg) dlg.close(); };
+    dlg.showModal();
+    $('#confirm-no').focus();
   },
   // הכתבה קולית לשדה טקסט. בדפדפן בלי תמיכה הכפתור לא מוצג
   mic: {

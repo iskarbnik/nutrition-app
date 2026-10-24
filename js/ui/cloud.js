@@ -130,7 +130,7 @@
       <div class="list">${list.map(f => `
         <div class="list-row"><div class="list-main"><span>${esc(label(f.name))}</span></div>
         <button type="button" class="chip-btn del" data-restore="${esc(f.id)}"></button></div>`).join('') || '<p class="hint">אין עדיין גיבויים.</p>'}</div>`);
-    $$('[data-restore]', root).forEach(b => twoTap(b, async () => {
+    $$('[data-restore]', root).forEach(b => confirmTap(b, async () => {
       try {
         await Sync.restore(Drive, Store, b.dataset.restore, today());
         UI.sheet.close();
@@ -139,7 +139,7 @@
       } catch (e) {
         UI.toast(ERR[e.message] || 'השחזור נכשל. הנתונים בטלפון לא השתנו.');
       }
-    }, 'שחזור'));
+    }, 'שחזור', 'לשחזר את הגיבוי הזה? הנתונים בטלפון יוחלפו בו.'));
   }
 
   function renderCard() {
@@ -164,7 +164,7 @@
     $('#sync-badge').addEventListener('click', () => (status === 'auth' ? connect() : go('settings')));
     $('#drive-connect').addEventListener('click', connect);
     $('#drive-sync').addEventListener('click', async () => { await Store.setMeta({ dirty: true }); syncNow(); });
-    twoTap($('#drive-refresh'), doRefresh, 'רענון מהדרייב');
+    confirmTap($('#drive-refresh'), doRefresh, 'רענון מהדרייב', 'לטעון את הנתונים מהדרייב? הנתונים בטלפון יוחלפו בהם.');
     $('#drive-restore').addEventListener('click', openRestore);
     $('#drive-off').addEventListener('click', async () => {
       Drive.disconnect();

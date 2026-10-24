@@ -119,7 +119,7 @@
       const sm = Store.get().savedMeals.find(x => x.id === b.dataset.saved);
       if (sm) commit(sm.items);
     }));
-    $$('[data-saved-del]', root).forEach(b => twoTap(b, () => {
+    $$('[data-saved-del]', root).forEach(b => confirmTap(b, () => {
       Store.mutate(st => { st.savedMeals = st.savedMeals.filter(x => x.id !== b.dataset.savedDel); });
       openAdd(meal);
     }));
@@ -345,7 +345,7 @@
       UI.sheet.close();
       render();
     });
-    twoTap($('#del', root), () => {
+    confirmTap($('#del', root), () => {
       Store.mutate(s => Days.removeItem(s, date, m, index));
       UI.sheet.close();
       render();

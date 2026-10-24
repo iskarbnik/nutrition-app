@@ -131,7 +131,7 @@
         <div class="list-main"><span>${esc(c.name)}</span><small>${fmt(c.kcal)} קל'</small></div>
         <button type="button" class="chip-btn del" data-coffee-del="${c.id}"></button>
       </div>`).join('') || '<p class="hint">עוד אין סוגי קפה.</p>';
-    $$('[data-coffee-del]').forEach(b => twoTap(b, () => {
+    $$('[data-coffee-del]').forEach(b => confirmTap(b, () => {
       Store.mutate(st => { st.coffeeTypes = st.coffeeTypes.filter(c => c.id !== b.dataset.coffeeDel); });
       fillDrinks();
     }));

@@ -130,7 +130,7 @@
         $('#measure-status').textContent = '';
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
-      twoTap($('.del', li), () => { Store.deleteMeasurement(m.date); render(); });
+      confirmTap($('.del', li), () => { Store.deleteMeasurement(m.date); render(); });
       list.appendChild(li);
     }
   }
