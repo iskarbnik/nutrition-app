@@ -165,7 +165,13 @@
       for (const k of COFFEE_FIELDS) form[k].value = Math.round(items.reduce((a, x) => a + x[k], 0) * 10) / 10;
       showStatus(status, 'אפשר לבדוק ולהוסיף', true);
     } catch (err) {
-      showStatus(status, err.message === 'offline' ? 'אין חיבור לאינטרנט' : 'החישוב נכשל. אפשר למלא ידנית.', false);
+      const msg = {
+        offline: 'אין חיבור לאינטרנט',
+        'bad-key': 'המפתח של ספק ה-AI לא תקין',
+        quota: 'נגמרה המכסה של הספק. אפשר לנסות מאוחר יותר.',
+      }[err.message] || 'החישוב נכשל. אפשר למלא ידנית.';
+      const detail = err.status ? `${err.status}: ${err.detail}` : err.message !== 'ai-failed' && err.message;
+      showStatus(status, detail ? `${msg} (${detail})` : msg, false);
     }
   }
 
