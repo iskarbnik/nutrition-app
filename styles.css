@@ -481,3 +481,4 @@ section[data-screen="meals"] { padding-bottom: 76px; }
 .stepper b { font-size: 2.2rem; font-weight: 700; min-width: 5ch; text-align: center; }
 .stepper button { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); font-size: 1.5rem; }
 .cups { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.c-bar { fill: var(--protein); }

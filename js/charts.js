@@ -158,7 +158,64 @@
     container.appendChild(tip);
   }
 
-  const Charts = { line, rollingAvg };
+  /**
+   * עמודות: { data: [{date, value|null}], goal?, unit }
+   * עמודה לכל יום, קצה עליון מעוגל, לחיצה מציגה ערך
+   */
+  function bars(container, opts) {
+    container.innerHTML = '';
+    const W = Math.max(container.clientWidth, 260);
+    const H = 180;
+    const m = { top: 14, right: 8, bottom: 24, left: 8 };
+    const iw = W - m.left - m.right;
+    const ih = H - m.top - m.bottom;
+    const max = Math.max(opts.goal || 0, ...opts.data.map(d => d.value || 0), 1) * 1.1;
+    const slot = iw / opts.data.length;
+    const bw = Math.min(28, slot * 0.6);
+    const Y = v => m.top + ih - (v / max) * ih;
+
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, class: 'chart', role: 'img' });
+    el('line', { x1: m.left, x2: W - m.right, y1: m.top + ih, y2: m.top + ih, class: 'c-grid' }, svg);
+    if (opts.goal) {
+      el('line', { x1: m.left, x2: W - m.right, y1: Y(opts.goal), y2: Y(opts.goal), class: 'c-goal' }, svg);
+    }
+
+    const tip = document.createElement('div');
+    tip.className = 'chart-tip';
+    tip.hidden = true;
+
+    opts.data.forEach((d, i) => {
+      const cx = m.left + slot * i + slot / 2;
+      const lbl = el('text', { x: cx, y: H - 6, 'text-anchor': 'middle', class: 'c-axis' }, svg);
+      lbl.textContent = fmtShort(Dates.toDay(d.date));
+      if (!d.value) return;
+      const y = Y(d.value);
+      const h = m.top + ih - y;
+      const r = Math.min(4, h, bw / 2);
+      // מלבן עם פינות עליונות מעוגלות בלבד
+      el('path', {
+        class: 'c-bar',
+        d: `M${cx - bw / 2},${m.top + ih} V${y + r} Q${cx - bw / 2},${y} ${cx - bw / 2 + r},${y} H${cx + bw / 2 - r} Q${cx + bw / 2},${y} ${cx + bw / 2},${y + r} V${m.top + ih} Z`,
+      }, svg);
+      const hit = el('rect', { x: cx - slot / 2, y: 0, width: slot, height: H, fill: 'transparent' }, svg);
+      const show = () => {
+        tip.textContent = `${Number(d.value).toLocaleString('he-IL')} ${opts.unit}`;
+        tip.hidden = false;
+        const rr = svg.getBoundingClientRect();
+        const left = Math.min(Math.max(cx * rr.width / W - tip.offsetWidth / 2, 0), rr.width - tip.offsetWidth);
+        tip.style.left = left + 'px';
+        tip.style.top = Math.max(y * rr.height / H - tip.offsetHeight - 8, 0) + 'px';
+      };
+      hit.addEventListener('pointerdown', show);
+      hit.addEventListener('pointerenter', show);
+      hit.addEventListener('pointerleave', () => { tip.hidden = true; });
+    });
+
+    container.appendChild(svg);
+    container.appendChild(tip);
+  }
+
+  const Charts = { line, bars, rollingAvg };
   if (typeof module !== 'undefined') module.exports = Charts;
   else root.Charts = Charts;
 })(this);
