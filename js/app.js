@@ -29,4 +29,28 @@ function start() {
   go('home');
 }
 
+// גרסה חדשה של האפליקציה: מציעים לרענן, לא מרעננים לבד באמצע עבודה
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloading) location.reload();
+  });
+  const offer = worker => {
+    const bar = $('#update-bar');
+    bar.hidden = false;
+    $('#update-btn').onclick = () => { reloading = true; worker.postMessage('SKIP_WAITING'); };
+  };
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const w = reg.installing;
+      w.addEventListener('statechange', () => {
+        if (w.state === 'installed' && navigator.serviceWorker.controller) offer(w);
+      });
+    });
+  }).catch(() => { /* בלי service worker האפליקציה עדיין עובדת ברשת */ });
+}
+
 Store.init().then(start);
+registerServiceWorker();

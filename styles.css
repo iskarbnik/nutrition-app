@@ -515,3 +515,7 @@ input[type="time"] { font: inherit; color: var(--text); background: var(--field)
 .switch input:focus-visible + span { outline: 2px solid var(--protein); outline-offset: 2px; }
 .reminder { display: flex; align-items: center; gap: 10px; background: var(--card); border-inline-start: 4px solid var(--carbs); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 10px; font-size: 0.9rem; }
 .reminder span { flex: 1; }
+
+/* עדכון גרסה */
+.update-bar { position: fixed; z-index: 25; inset-inline: 12px; top: calc(env(safe-area-inset-top, 0px) + 10px); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); background: var(--carbs); color: #1F3B33; font-size: 0.9rem; }
+.update-bar button { border: 0; border-radius: 999px; padding: 8px 14px; background: #1F3B33; color: #F5F7F4; font-weight: 500; }
