@@ -470,3 +470,14 @@ textarea {
 }
 
 section[data-screen="meals"] { padding-bottom: 76px; }
+
+/* מים וקפה */
+.card-sub { margin: 18px 0 4px; font-size: 0.95rem; font-weight: 500; }
+.editor-grid.four { grid-template-columns: repeat(4, 1fr); margin-bottom: 12px; }
+.row2 { display: flex; gap: 8px; }
+.row2 .btn { flex: 1; }
+.coffee-form { margin-top: 12px; }
+.stepper { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 8px 0 16px; }
+.stepper b { font-size: 2.2rem; font-weight: 700; min-width: 5ch; text-align: center; }
+.stepper button { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); font-size: 1.5rem; }
+.cups { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }

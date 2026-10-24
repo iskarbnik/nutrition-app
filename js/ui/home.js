@@ -82,12 +82,63 @@
     renderWeight();
   }
 
-  function init() {
-    // מים: כל לחיצה רבע ליטר
-    $('#tile-water').addEventListener('click', () => {
-      Store.mutate(s => Days.addWater(s, today(), 0.25));
+  // מים: חלונית עם הוספה והורדה
+  function openWater() {
+    const root = UI.sheet.open(`
+      <h3 class="sheet-title">מים היום</h3>
+      <div class="stepper">
+        <button type="button" data-w="-0.25" aria-label="פחות רבע ליטר">−</button>
+        <b id="w-val"></b>
+        <button type="button" data-w="0.25" aria-label="עוד רבע ליטר">+</button>
+      </div>
+      <div class="chips"><button type="button" class="chip-btn" data-w="0.5">+ חצי ליטר</button><button type="button" class="chip-btn" data-w="1">+ ליטר</button></div>
+      <p class="hint" id="w-goal"></p>`);
+    const show = () => {
+      const s = Store.get();
+      const day = s.days[today()];
+      $('#w-val', root).textContent = `${day ? day.water : 0} ל'`;
+      $('#w-goal', root).textContent = `היעד: ${s.profile.waterGoal} ליטר. אפשר לשנות בהגדרות.`;
+    };
+    $$('[data-w]', root).forEach(b => b.addEventListener('click', () => {
+      Store.mutate(s => Days.addWater(s, today(), Number(b.dataset.w)));
+      show();
       render();
-    });
+    }));
+    show();
+  }
+
+  // קפה: הוספת כוס לפי סוג, והסרה של כוס שנרשמה
+  function openCoffee() {
+    const s = Store.get();
+    const day = s.days[today()];
+    const cups = day ? day.coffee : [];
+    const name = id => (s.coffeeTypes.find(c => c.id === id) || { name: 'סוג שנמחק' }).name;
+    const root = UI.sheet.open(`
+      <h3 class="sheet-title">קפה היום</h3>
+      ${s.coffeeTypes.length
+        ? `<div class="list">${s.coffeeTypes.map(c => `
+            <button type="button" class="list-main" data-cup="${c.id}"><span>+ ${esc(c.name)}</span><small>${fmt(c.kcal)} קל'</small></button>`).join('')}</div>`
+        : `<p class="sheet-msg">עוד אין סוגי קפה. מוסיפים אותם בהגדרות, פעם אחת.</p>
+           <button type="button" class="btn primary" id="to-settings">להגדרות</button>`}
+      ${cups.length ? `<h4 class="sheet-sub">נרשמו היום</h4><div class="cups">${cups.map((id, i) =>
+        `<button type="button" class="chip-btn" data-uncup="${i}">${esc(name(id))} ✕</button>`).join('')}</div>` : ''}`);
+    $$('[data-cup]', root).forEach(b => b.addEventListener('click', () => {
+      Store.mutate(st => Days.addCoffee(st, today(), b.dataset.cup));
+      render();
+      openCoffee();
+    }));
+    $$('[data-uncup]', root).forEach(b => b.addEventListener('click', () => {
+      Store.mutate(st => Days.removeCoffee(st, today(), Number(b.dataset.uncup)));
+      render();
+      openCoffee();
+    }));
+    const ts = $('#to-settings', root);
+    if (ts) ts.addEventListener('click', () => { UI.sheet.close(); go('settings'); });
+  }
+
+  function init() {
+    $('#tile-water').addEventListener('click', openWater);
+    $('#tile-coffee').addEventListener('click', openCoffee);
   }
 
   Screens.home = { init, render };

@@ -23,7 +23,7 @@
 
   function addWater(state, date, liters) {
     const day = get(state, date);
-    day.water = Math.max(0, round1((day.water || 0) + liters));
+    day.water = Math.max(0, Math.round(((day.water || 0) + liters) * 100) / 100);
   }
   const addCoffee = (state, date, typeId) => { get(state, date).coffee.push(typeId); };
   const removeCoffee = (state, date, index) => { get(state, date).coffee.splice(index, 1); };

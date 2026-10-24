@@ -120,9 +120,59 @@
     fillAI();
   }
 
+  // מים וסוגי קפה
+  const COFFEE_FIELDS = ['kcal', 'protein', 'fat', 'carbs'];
+
+  function fillDrinks() {
+    const s = Store.get();
+    $('#water-goal-input').value = s.profile.waterGoal;
+    $('#coffee-types').innerHTML = s.coffeeTypes.map(c => `
+      <div class="list-row">
+        <div class="list-main"><span>${esc(c.name)}</span><small>${fmt(c.kcal)} קל'</small></div>
+        <button type="button" class="chip-btn del" data-coffee-del="${c.id}"></button>
+      </div>`).join('') || '<p class="hint">עוד אין סוגי קפה.</p>';
+    $$('[data-coffee-del]').forEach(b => twoTap(b, () => {
+      Store.mutate(st => { st.coffeeTypes = st.coffeeTypes.filter(c => c.id !== b.dataset.coffeeDel); });
+      fillDrinks();
+    }));
+  }
+
+  function onCoffeeSubmit(e) {
+    e.preventDefault();
+    const form = $('#coffee-form').elements;
+    const name = form.name.value.trim();
+    if (!name) return showStatus($('#coffee-status'), 'צריך שם לסוג הקפה', false);
+    const type = { id: 'c' + Date.now().toString(36), name, fiber: 0, sugar: 0, sodium: 0 };
+    for (const k of COFFEE_FIELDS) type[k] = Math.max(0, Number(form[k].value) || 0);
+    Store.mutate(s => { s.coffeeTypes.push(type); });
+    $('#coffee-form').reset();
+    showStatus($('#coffee-status'), 'נוסף ✓', true);
+    fillDrinks();
+  }
+
+  async function onCoffeeAI() {
+    const form = $('#coffee-form').elements;
+    const status = $('#coffee-status');
+    const name = form.name.value.trim();
+    if (!name) return showStatus(status, 'צריך קודם לכתוב שם, למשל: הפוך גדול עם חלב 1%', false);
+    const provider = Store.get().settings.aiProvider;
+    const key = await Secrets.get(PROVIDERS[provider].key);
+    if (!key) return showStatus(status, 'צריך להזין מפתח AI למטה', false);
+    showStatus(status, 'מחשב...', true);
+    try {
+      const { items } = AI.parseMeal(await AI.ask(provider, key, { system: AI.mealPrompt, json: true, text: `כוס אחת: ${name}` }));
+      if (!items.length) return showStatus(status, 'לא הצלחתי לחשב. אפשר למלא ידנית.', false);
+      for (const k of COFFEE_FIELDS) form[k].value = Math.round(items.reduce((a, x) => a + x[k], 0) * 10) / 10;
+      showStatus(status, 'אפשר לבדוק ולהוסיף', true);
+    } catch (err) {
+      showStatus(status, err.message === 'offline' ? 'אין חיבור לאינטרנט' : 'החישוב נכשל. אפשר למלא ידנית.', false);
+    }
+  }
+
   function render() {
     fillProfile();
     fillTargets();
+    fillDrinks();
     fillAI();
   }
 
@@ -133,6 +183,12 @@
       Store.mutate(s => { s.settings.aiProvider = r.value; });
       fillAI();
     }));
+    $('#water-goal-input').addEventListener('change', e => {
+      const v = Number(e.target.value);
+      if (v >= 0.5 && v <= 6) Store.updateProfile({ waterGoal: v });
+    });
+    $('#coffee-form').addEventListener('submit', onCoffeeSubmit);
+    $('#coffee-ai').addEventListener('click', onCoffeeAI);
     $('#ai-key-save').addEventListener('click', onKeySave);
     $('#ai-key-clear').addEventListener('click', onKeyClear);
   }

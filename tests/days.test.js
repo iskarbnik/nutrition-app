@@ -116,3 +116,11 @@ test('scaleItem with zero original grams keeps values', () => {
   const it = { name: 'x', grams: 0, kcal: 50, protein: 1, fat: 1, carbs: 1, fiber: 0, sugar: 0, sodium: 0 };
   assert.equal(Days.scaleItem(it, 100).kcal, 50);
 });
+
+test('water keeps quarter liters', () => {
+  const s = State.empty();
+  Days.addWater(s, D, 1.5);
+  Days.addWater(s, D, 1);
+  Days.addWater(s, D, -0.25);
+  assert.equal(Days.get(s, D).water, 2.25);
+});

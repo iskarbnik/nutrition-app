@@ -193,6 +193,30 @@
         <p id="targets-status" class="status" role="status"></p>
       </form>
 
+      <div class="card" id="drinks-card">
+        <h2>מים וקפה</h2>
+        <label>יעד מים יומי (ליטר)
+          <input id="water-goal-input" type="number" inputmode="decimal" min="0.5" max="6" step="0.25">
+        </label>
+        <h3 class="card-sub">סוגי קפה</h3>
+        <p class="hint">כל כוס שנרשמת מוסיפה את הערכים של הסוג שלה.</p>
+        <div class="list" id="coffee-types"></div>
+        <form id="coffee-form" class="coffee-form" novalidate>
+          <label>שם<input name="name" type="text" placeholder="למשל: הפוך עם חלב סויה" autocomplete="off"></label>
+          <div class="editor-grid four">
+            <label>קלוריות<input name="kcal" type="number" inputmode="decimal" min="0"></label>
+            <label>חלבון<input name="protein" type="number" inputmode="decimal" min="0"></label>
+            <label>שומן<input name="fat" type="number" inputmode="decimal" min="0"></label>
+            <label>פחמימות<input name="carbs" type="number" inputmode="decimal" min="0"></label>
+          </div>
+          <div class="row2">
+            <button type="button" class="btn" id="coffee-ai">חישוב עם AI</button>
+            <button type="submit" class="btn primary">הוספת סוג</button>
+          </div>
+          <p id="coffee-status" class="status" role="status"></p>
+        </form>
+      </div>
+
       <div class="card" id="ai-card">
         <h2>זיהוי אוכל עם AI</h2>
         <fieldset class="seg">
