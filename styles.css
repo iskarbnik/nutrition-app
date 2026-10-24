@@ -519,3 +519,4 @@ input[type="time"] { font: inherit; color: var(--text); background: var(--field)
 /* עדכון גרסה */
 .update-bar { position: fixed; z-index: 25; inset-inline: 12px; top: calc(env(safe-area-inset-top, 0px) + 10px); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-radius: var(--radius-md); background: var(--carbs); color: #1F3B33; font-size: 0.9rem; }
 .update-bar button { border: 0; border-radius: 999px; padding: 8px 14px; background: #1F3B33; color: #F5F7F4; font-weight: 500; }
+.err-detail { word-break: break-word; font-size: 0.75rem; }

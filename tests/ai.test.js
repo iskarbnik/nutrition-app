@@ -112,3 +112,13 @@ test('ask sends a clean key even if a dirty one was saved', async () => {
 test('a key that is empty after cleaning is bad-key, not offline', async () => {
   await assert.rejects(AI.ask('gemini', '‏‎', input, fakeFetch(200, {})), { message: 'bad-key' });
 });
+
+test('failed calls carry the HTTP status and the provider message for display', async () => {
+  const body = { error: { code: 404, message: 'models/gemini-x is not found for API version v1beta', status: 'NOT_FOUND' } };
+  await assert.rejects(AI.ask('gemini', 'k', input, fakeFetch(404, body)), err => {
+    assert.equal(err.message, 'ai-failed');
+    assert.equal(err.status, 404);
+    assert.match(err.detail, /not found/);
+    return true;
+  });
+});

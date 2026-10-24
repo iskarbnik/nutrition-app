@@ -227,15 +227,16 @@
     if (!key) return viewError('no-key');
     try {
       const text = await AI.ask(provider, key, { system: AI.mealPrompt, json: true, ...input });
-      const { items } = AI.parseMeal(text);
-      if (!items.length) return viewError('empty');
+      const { items, error } = AI.parseMeal(text);
+      if (!items.length) return viewError('empty', error ? `התשובה: ${text.slice(0, 120)}` : '');
       viewReview(items);
     } catch (err) {
-      viewError(err.message);
+      viewError(err.message, err.status ? `${err.status}: ${err.detail}` : '');
     }
   }
 
-  function viewError(code) {
+  // detail: פרטי השגיאה מהספק, מוצגים בקטן כדי שאפשר יהיה להבין ולדווח
+  function viewError(code, detail = '') {
     const msg = code === 'no-key'
       ? 'כדי לחשב עם AI צריך להזין מפתח בהגדרות.'
       : code === 'empty'
@@ -244,6 +245,7 @@
     const toSettings = code === 'no-key' || code === 'bad-key' || code === 'quota';
     const root = UI.sheet.open(`
       <p class="sheet-msg">${msg}</p>
+      ${detail ? `<p class="hint err-detail" dir="auto">${esc(detail)}</p>` : ''}
       ${toSettings ? '<button type="button" class="btn primary" id="go-settings">להגדרות</button>' : ''}
       <button type="button" class="btn" id="to-search">חיפוש ברשימה</button>
       ${pendingText ? '<button type="button" class="btn-text back" id="to-text">חזרה לטקסט</button>' : ''}`);

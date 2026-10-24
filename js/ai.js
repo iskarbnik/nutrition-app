@@ -80,19 +80,31 @@
       throw new Error('offline');
     }
     if (!res.ok) {
-      if (res.status === 401 || res.status === 403) throw new Error('bad-key');
-      if (res.status === 429) throw new Error('quota');
-      if (res.status === 400) {
-        const text = await res.text().catch(() => '');
-        if (/api key/i.test(text)) throw new Error('bad-key');
-      }
-      throw new Error('ai-failed');
+      const text = await res.text().catch(() => '');
+      let detail = text.slice(0, 200);
+      try { detail = JSON.parse(text).error.message || detail; } catch { /* נשאר הטקסט */ }
+      if (res.status === 401 || res.status === 403) throw fail('bad-key', res.status, detail);
+      if (res.status === 429) throw fail('quota', res.status, detail);
+      if (res.status === 400 && /api key/i.test(text)) throw fail('bad-key', res.status, detail);
+      throw fail('ai-failed', res.status, detail);
     }
+    let json;
     try {
-      return adapter.extract(await res.json());
+      json = await res.json();
+      return adapter.extract(json);
     } catch {
-      throw new Error('ai-failed');
+      // למשל תשובה שנחסמה או נקטעה, בלי טקסט
+      const reason = json && json.candidates && json.candidates[0] && json.candidates[0].finishReason;
+      throw fail('ai-failed', res.status, reason ? `תשובה ריקה (${reason})` : 'תשובה לא צפויה');
     }
+  }
+
+  // שגיאה עם הפרטים מהספק, כדי להציג למשתמש מה קרה
+  function fail(code, status, detail) {
+    const e = new Error(code);
+    e.status = status;
+    e.detail = String(detail || '').slice(0, 200);
+    return e;
   }
 
   const NUMS = ['grams', 'kcal', 'protein', 'fat', 'carbs', 'fiber', 'sugar', 'sodium'];
