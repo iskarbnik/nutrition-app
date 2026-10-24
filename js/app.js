@@ -58,6 +58,28 @@ function registerServiceWorker() {
   };
   navigator.serviceWorker.register('sw.js').then(reg => {
     if (reg.waiting && navigator.serviceWorker.controller) offer(reg.waiting);
+    // אפליקציה מותקנת נשארת פתוחה ברקע: בודקים גרסה חדשה בכל חזרה אליה
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') reg.update().catch(() => {});
+    });
+    $('#check-update').addEventListener('click', async () => {
+      const status = $('#update-status');
+      try {
+        await reg.update();
+        const fresh = reg.installing || reg.waiting;
+        if (fresh) showStatus(status, 'נמצאה גרסה חדשה. לוחצים "רענון" בפס למטה.', true);
+        else showStatus(status, 'זו הגרסה האחרונה', true);
+      } catch {
+        showStatus(status, 'אין חיבור לאינטרנט', false);
+      }
+    });
+    const ctl = navigator.serviceWorker.controller;
+    if (ctl) {
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data && e.data.version) $('#app-version').textContent = 'גרסה ' + e.data.version.replace('app-v', '');
+      });
+      ctl.postMessage('VERSION');
+    }
     reg.addEventListener('updatefound', () => {
       const w = reg.installing;
       w.addEventListener('statechange', () => {

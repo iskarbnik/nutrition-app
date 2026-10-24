@@ -1,6 +1,6 @@
 // Service worker: קבצי האפליקציה נשמרים בטלפון, כדי שתעבוד גם בלי אינטרנט
 // בכל שינוי בקבצים מעלים את מספר הגרסה, והאפליקציה תציע לעדכן
-const VERSION = 'app-v8';
+const VERSION = 'app-v9';
 const FONTS = 'fonts-v1';
 
 const FILES = [
@@ -58,6 +58,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('message', e => {
   if (e.data === 'SKIP_WAITING') self.skipWaiting();
+  if (e.data === 'VERSION') e.source.postMessage({ version: VERSION });
 });
 
 self.addEventListener('fetch', e => {
