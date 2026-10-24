@@ -397,7 +397,7 @@ label.check input { width: 20px; height: 20px; accent-color: var(--fat); }
 .sheet-sub { margin: 16px 0 6px; font-size: 0.85rem; color: var(--muted); font-weight: 500; }
 .sheet-msg { margin: 8px 0 16px; font-size: 1rem; }
 .sheet .btn + .btn { margin-top: 8px; }
-.ways { display: flex; gap: 8px; margin: 4px 0 4px; }
+.ways { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 4px; }
 .way {
   flex: 1;
   display: grid;

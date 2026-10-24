@@ -11,6 +11,7 @@
   };
   const ICONS = {
     photo: '<svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
+    gallery: '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m5 18 5-5 3 3 2-2 4 4"/></svg>',
     search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg>',
     text: '<svg viewBox="0 0 24 24"><path d="M5 19h4L19 9l-4-4L5 15z"/><path d="m13 7 4 4"/></svg>',
   };
@@ -101,6 +102,7 @@
       ${mealTabs()}
       <div class="ways">
         <button type="button" class="way" id="w-photo">${ICONS.photo}צילום</button>
+        <button type="button" class="way" id="w-gallery">${ICONS.gallery}תמונה מהגלריה</button>
         <button type="button" class="way" id="w-search">${ICONS.search}חיפוש ברשימה</button>
         <button type="button" class="way" id="w-text">${ICONS.text}תיאור חופשי</button>
       </div>
@@ -109,6 +111,7 @@
 
     wireMealTabs(root);
     $('#w-photo', root).addEventListener('click', () => $('#photo-input').click());
+    $('#w-gallery', root).addEventListener('click', () => $('#gallery-input').click());
     $('#w-search', root).addEventListener('click', viewSearch);
     $('#w-text', root).addEventListener('click', () => viewText());
     $$('[data-saved]', root).forEach(b => b.addEventListener('click', () => {
@@ -347,6 +350,7 @@
   function init() {
     $('#fab-add').addEventListener('click', () => openAdd());
     $('#photo-input').addEventListener('change', onPhoto);
+    $('#gallery-input').addEventListener('change', onPhoto);
     $('#meal-cards').addEventListener('click', e => {
       const add = e.target.closest('[data-add]');
       if (add) return openAdd(add.dataset.add);
