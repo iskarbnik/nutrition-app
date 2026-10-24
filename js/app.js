@@ -46,6 +46,9 @@ function renderHome() {
   $('#home-msg').textContent = missing
     ? g('כדי להתחיל, מלא פרטים במסך הגדרות.', 'כדי להתחיל, מלאי פרטים במסך הגדרות.', 'כדי להתחיל, צריך למלא פרטים במסך הגדרות.')
     : 'הפרטים נשמרו. אפשר להזין מדידות במסך מדדים.';
+  if (!Store.isPersistent()) {
+    $('#home-msg').textContent += ' חשוב לדעת: הדפדפן חוסם שמירה בטלפון, והנתונים יימחקו כשסוגרים את האפליקציה.';
+  }
 }
 
 // טופס פרטים אישיים
@@ -262,13 +265,16 @@ function renderMeasureList() {
 }
 
 // הפעלה
-Store.load();
-$$('.tabbar button').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
-$('#profile-form').addEventListener('submit', onProfileSubmit);
-$('#measure-form').addEventListener('submit', onMeasureSubmit);
-$('#measure-form').elements.date.addEventListener('change', e => {
-  if (e.target.value) fillMeasureForm(e.target.value);
-});
-setupChartTabs();
-fillProfileForm();
-go('home');
+Store.init().then(start);
+
+function start() {
+  $$('.tabbar button').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+  $('#profile-form').addEventListener('submit', onProfileSubmit);
+  $('#measure-form').addEventListener('submit', onMeasureSubmit);
+  $('#measure-form').elements.date.addEventListener('change', e => {
+    if (e.target.value) fillMeasureForm(e.target.value);
+  });
+  setupChartTabs();
+  fillProfileForm();
+  go('home');
+}

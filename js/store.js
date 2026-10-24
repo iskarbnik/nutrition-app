@@ -1,71 +1,87 @@
-// שמירת כל הנתונים באובייקט אחד ב-localStorage
+// עותק העבודה בזיכרון, שנשמר ל-IndexedDB
+// כל שינוי עובר דרך mutate: מסמן שצריך סנכרון ומודיע למסכים
 const Store = (() => {
-  const KEY = 'ori-nutrition';
-  const VERSION = 1;
+  const LEGACY_KEY = 'ori-nutrition';
+  let state = State.empty();
+  let meta = { dirty: false, lastSyncAt: 0, lastBackupDate: null, driveFolderId: null, dataFileId: null };
+  let timer;
 
-  const empty = () => ({
-    version: VERSION,
-    profile: {
-      name: '',
-      birthYear: null,
-      sex: null,
-      height: null,
-      activity: 1.2,
-      goalWeight: null,
-      goalFat: null,
-    },
-    measurements: [], // { date, weight, fat, waist, height }
-    days: {},         // 'YYYY-MM-DD' -> { meals, water, coffee, steps }
-  });
+  let persistent = true;
 
-  let data;
-
-  function load() {
+  // אם אין אחסון בטלפון, עובדים מהזיכרון בלבד ומציגים אזהרה
+  async function init() {
     try {
-      const raw = localStorage.getItem(KEY);
-      data = raw ? { ...empty(), ...JSON.parse(raw) } : empty();
+      await load();
     } catch {
-      data = empty();
+      persistent = false;
+      state = State.migrate(readLegacy());
     }
-    return data;
+    return state;
   }
 
-  function save() {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(data));
-      return true;
-    } catch {
-      return false;
+  function readLegacy() {
+    try { return JSON.parse(localStorage.getItem(LEGACY_KEY)); } catch { return null; }
+  }
+
+  async function load() {
+    const saved = await DB.get('kv', 'state');
+    if (saved) {
+      state = State.migrate(saved);
+    } else {
+      // העברה חד-פעמית מהגרסה שנשמרה ב-localStorage
+      const legacy = readLegacy();
+      state = State.migrate(legacy);
+      if (legacy) {
+        await DB.put('kv', 'state', state);
+        try { localStorage.removeItem(LEGACY_KEY); } catch { /* לא חשוב */ }
+      }
     }
+    meta = { ...meta, ...(await DB.get('kv', 'meta')) };
   }
 
-  function get() { return data || load(); }
+  const get = () => state;
+  const getMeta = () => meta;
 
-  function updateProfile(patch) {
-    get().profile = { ...data.profile, ...patch };
-    return save();
+  // כתיבה שקטה: בלי אחסון, הנתונים נשארים רק בזיכרון
+  const write = (key, value) => (persistent ? DB.put('kv', key, value).catch(() => {}) : Promise.resolve());
+
+  function persist() {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      write('state', state);
+      write('meta', meta);
+    }, 300);
   }
 
-  // מדידה אחת לכל תאריך. שמירה בתאריך קיים מחליפה אותו
-  function upsertMeasurement(m) {
-    const list = get().measurements.filter(x => x.date !== m.date);
-    list.push(m);
-    list.sort((a, b) => a.date.localeCompare(b.date));
-    data.measurements = list;
-    // הגובה האחרון שנמדד הוא הגובה בפרופיל
-    const lastHeight = [...list].reverse().find(x => x.height);
-    if (lastHeight) data.profile.height = lastHeight.height;
-    return save();
+  function setMeta(patch) {
+    meta = { ...meta, ...patch };
+    return write('meta', meta);
   }
 
-  function deleteMeasurement(date) {
-    get().measurements = data.measurements.filter(x => x.date !== date);
-    return save();
+  function mutate(fn) {
+    fn(state);
+    state.updatedAt = Date.now();
+    meta.dirty = true;
+    persist();
+    window.dispatchEvent(new Event('state-changed'));
+    return true;
   }
 
-  function measurementOn(date) {
-    return get().measurements.find(x => x.date === date) || null;
+  // החלפה מלאה (רענון או שחזור מהדרייב). לא מסמן לסנכרון
+  async function replace(next) {
+    state = State.migrate(next);
+    meta.dirty = false;
+    await write('state', state);
+    await write('meta', meta);
+    window.dispatchEvent(new Event('state-replaced'));
   }
 
-  return { load, save, get, updateProfile, upsertMeasurement, deleteMeasurement, measurementOn };
+  const updateProfile = patch => mutate(s => { s.profile = { ...s.profile, ...patch }; });
+  const upsertMeasurement = m => mutate(s => State.upsertMeasurement(s, m));
+  const deleteMeasurement = date => mutate(s => State.deleteMeasurement(s, date));
+  const measurementOn = date => State.measurementOn(state, date);
+
+  const isPersistent = () => persistent;
+
+  return { init, isPersistent, get, getMeta, setMeta, mutate, replace, updateProfile, upsertMeasurement, deleteMeasurement, measurementOn };
 })();
