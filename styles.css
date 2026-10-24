@@ -45,6 +45,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
@@ -491,3 +492,9 @@ section[data-screen="meals"] { padding-bottom: 76px; }
 .week-row b { font-weight: 500; }
 .tip { background: var(--ink); color: var(--bg); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 12px; line-height: 1.55; }
 .btn:disabled { opacity: 0.5; }
+
+/* דרייב */
+.drive-state { margin: 0 0 8px; font-weight: 500; }
+#drive-actions .btn { margin-top: 8px; }
+.sync-badge { border: 0; cursor: pointer; }
+.btn:disabled { cursor: not-allowed; }

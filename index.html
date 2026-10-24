@@ -207,6 +207,19 @@
         <p id="targets-status" class="status" role="status"></p>
       </form>
 
+      <div class="card" id="drive-card">
+        <h2>גיבוי בגוגל דרייב</h2>
+        <p id="drive-state" class="drive-state"></p>
+        <p class="hint">הנתונים נשמרים בתיקייה "תזונה ומשקל" בדרייב שלך, עם גיבוי יומי של 30 הימים האחרונים.</p>
+        <button type="button" class="btn primary" id="drive-connect">חיבור לגוגל דרייב</button>
+        <div id="drive-actions" hidden>
+          <button type="button" class="btn" id="drive-sync">סנכרון עכשיו</button>
+          <button type="button" class="btn" id="drive-refresh"></button>
+          <button type="button" class="btn" id="drive-restore">שחזור מגיבוי</button>
+          <button type="button" class="btn-text back" id="drive-off">ניתוק מהדרייב</button>
+        </div>
+      </div>
+
       <div class="card" id="drinks-card">
         <h2>מים וקפה</h2>
         <label>יעד מים יומי (ליטר)
@@ -275,6 +288,8 @@
   <script src="js/targets.js"></script>
   <script src="js/days.js"></script>
   <script src="js/week.js"></script>
+  <script src="js/sync.js"></script>
+  <script src="js/drive.js"></script>
   <script src="js/foods.js"></script>
   <script src="js/ai.js"></script>
   <script src="js/charts.js"></script>
@@ -285,6 +300,7 @@
   <script src="js/ui/body.js"></script>
   <script src="js/ui/activity.js"></script>
   <script src="js/ui/week.js"></script>
+  <script src="js/ui/cloud.js"></script>
   <script src="js/ui/settings.js"></script>
   <script src="js/app.js"></script>
 </body>

@@ -5,6 +5,8 @@
       gemini: 'gemini-3.8-flash',
       claude: 'claude-sonnet-5-5',
     },
+    // מזהה הלקוח מ-Google Cloud. ההסבר ב-docs/google-setup.md
+    GOOGLE_CLIENT_ID: '',
   };
   if (typeof module !== 'undefined') module.exports = Config;
   else root.Config = Config;

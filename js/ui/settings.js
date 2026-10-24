@@ -174,6 +174,7 @@
     fillTargets();
     fillDrinks();
     fillAI();
+    if (Screens.cloud) Screens.cloud.render();
   }
 
   function init() {
