@@ -139,6 +139,7 @@
   function init() {
     $('#tile-water').addEventListener('click', openWater);
     $('#tile-coffee').addEventListener('click', openCoffee);
+    $('#week-link').addEventListener('click', () => Screens.week.open());
   }
 
   Screens.home = { init, render };

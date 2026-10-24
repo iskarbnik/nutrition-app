@@ -482,3 +482,12 @@ section[data-screen="meals"] { padding-bottom: 76px; }
 .stepper button { width: 52px; height: 52px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); font-size: 1.5rem; }
 .cups { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
 .c-bar { fill: var(--protein); }
+
+/* סיכום שבועי */
+.week-rows { background: var(--card); border-radius: var(--radius-md); padding: 4px 14px; margin-bottom: 12px; }
+.week-row { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 0.95rem; }
+.week-row:last-child { border-bottom: 0; }
+.week-row span { color: var(--muted); }
+.week-row b { font-weight: 500; }
+.tip { background: var(--ink); color: var(--bg); border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 12px; line-height: 1.55; }
+.btn:disabled { opacity: 0.5; }
