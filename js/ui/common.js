@@ -79,6 +79,45 @@ const UI = {
       if (!this.locked) this.close();
     },
   },
+  // הכתבה קולית לשדה טקסט. בדפדפן בלי תמיכה הכפתור לא מוצג
+  mic: {
+    supported: !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+    html() {
+      return this.supported
+        ? '<button type="button" class="mic" aria-label="הכתבה קולית"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>'
+        : '';
+    },
+    // field: input או textarea. הטקסט שנאמר נוסף לסוף מה שכבר כתוב
+    wire(root, field) {
+      const btn = $('.mic', root);
+      if (!btn) return;
+      const ERRORS = {
+        'not-allowed': 'אין הרשאה למיקרופון. אפשר לאשר בהגדרות הדפדפן.',
+        'service-not-allowed': 'אין הרשאה למיקרופון. אפשר לאשר בהגדרות הדפדפן.',
+        network: 'הכתבה קולית צריכה חיבור לאינטרנט.',
+        'no-speech': 'לא נשמע דיבור. אפשר לנסות שוב.',
+        'audio-capture': 'לא נמצא מיקרופון.',
+      };
+      let rec = null;
+      btn.addEventListener('click', () => {
+        if (rec) return rec.stop();
+        const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+        rec = new R();
+        rec.lang = 'he-IL';
+        rec.interimResults = true;
+        const before = field.value.trim();
+        rec.onresult = e => {
+          const said = [...e.results].map(r => r[0].transcript).join(' ').trim();
+          field.value = before && said ? `${before} ${said}` : before || said;
+          field.dispatchEvent(new Event('input'));
+        };
+        rec.onerror = e => { if (ERRORS[e.error]) UI.toast(ERRORS[e.error]); };
+        rec.onend = () => { rec = null; btn.classList.remove('on'); };
+        btn.classList.add('on');
+        rec.start();
+      });
+    },
+  },
 };
 
 // היעדים של היום לפי הפרופיל והמדידה האחרונה

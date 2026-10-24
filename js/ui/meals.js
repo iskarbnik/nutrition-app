@@ -132,7 +132,7 @@
   function viewSearch() {
     const root = UI.sheet.open(`
       <h3 class="sheet-title">חיפוש ${MEAL_TO[meal]}</h3>
-      <input type="search" id="food-q" placeholder="למשל: חביתה, לחם מלא, תפוח" autocomplete="off">
+      <div class="with-mic"><input type="search" id="food-q" placeholder="למשל: חביתה, לחם מלא, תפוח" autocomplete="off">${UI.mic.html()}</div>
       <div class="list" id="food-results"></div>
       <button type="button" class="btn-text back" id="back">חזרה</button>`);
     const q = $('#food-q', root);
@@ -152,6 +152,7 @@
       if (tt) tt.addEventListener('click', () => viewText(q.value));
     };
     q.addEventListener('input', show);
+    UI.mic.wire(root, q);
     $('#back', root).addEventListener('click', () => openAdd(meal));
     q.focus();
   }
@@ -193,11 +194,12 @@
   function viewText(text = pendingText) {
     const root = UI.sheet.open(`
       <h3 class="sheet-title">מה אכלת ${MEAL_TO[meal]}?</h3>
-      <textarea id="free-text" rows="3" placeholder="למשל: חביתה משתי ביצים, 2 פרוסות לחם מלא וסלט"></textarea>
+      <div class="with-mic"><textarea id="free-text" rows="3" placeholder="למשל: חביתה משתי ביצים, 2 פרוסות לחם מלא וסלט"></textarea>${UI.mic.html()}</div>
       <button type="button" class="btn primary" id="calc">חישוב</button>
       <button type="button" class="btn-text back" id="back">חזרה</button>`);
     const ta = $('#free-text', root);
     ta.value = text;
+    UI.mic.wire(root, ta);
     $('#calc', root).addEventListener('click', () => {
       pendingText = ta.value.trim();
       if (!pendingText) return UI.toast('צריך לכתוב מה אכלת');

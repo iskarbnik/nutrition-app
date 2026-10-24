@@ -441,6 +441,26 @@ textarea {
   border-radius: var(--radius-sm);
   resize: vertical;
 }
+.with-mic { position: relative; }
+.with-mic:has(.mic) input, .with-mic:has(.mic) textarea { padding-inline-end: 52px; }
+.mic {
+  position: absolute;
+  inset-inline-end: 6px;
+  top: 6px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+}
+.mic svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.with-mic input ~ .mic { top: 8px; }
+.mic.on { background: var(--over); color: var(--bg); animation: mic-pulse 1.2s ease-in-out infinite; }
+@keyframes mic-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--over) 25%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .mic.on { animation: none; } }
 .editor { background: var(--card); border-radius: var(--radius-md); padding: 12px; margin-bottom: 8px; }
 .editor-head { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
 .editor-head input { margin: 0; font-weight: 500; }
