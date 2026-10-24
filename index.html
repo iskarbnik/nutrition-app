@@ -61,7 +61,10 @@
 
     <!-- ארוחות -->
     <section class="screen" data-screen="meals" hidden>
-      <div class="card"><p class="muted">רישום ארוחות יגיע בשלב הבא.</p></div>
+      <div class="day-sum" id="day-sum"></div>
+      <div id="meal-cards"></div>
+      <button type="button" class="fab" id="fab-add" aria-label="הוספת אוכל">+</button>
+      <input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
     </section>
 
     <!-- מדדים -->
@@ -216,6 +219,8 @@
     <div class="sheet" role="dialog" aria-modal="true"><div class="sheet-grab"></div><div id="sheet-body"></div></div>
   </div>
 
+  <div id="toast" class="toast" role="status" hidden></div>
+
   <nav class="tabbar">
     <button data-go="home" class="active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>ראשי</button>
     <button data-go="meals"><svg viewBox="0 0 24 24"><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/></svg>ארוחות</button>
@@ -237,6 +242,7 @@
   <script src="js/calc.js"></script>
   <script src="js/ui/common.js"></script>
   <script src="js/ui/home.js"></script>
+  <script src="js/ui/meals.js"></script>
   <script src="js/ui/body.js"></script>
   <script src="js/ui/settings.js"></script>
   <script src="js/app.js"></script>

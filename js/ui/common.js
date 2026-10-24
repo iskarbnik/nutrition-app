@@ -38,8 +38,15 @@ function twoTap(btn, onConfirm, label = 'מחיקה') {
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const fmt = n => Math.round(n).toLocaleString('he-IL');
 
-// חלונית תחתונה
+// חלונית תחתונה והודעה קצרה
 const UI = {
+  toast(text) {
+    const t = $('#toast');
+    t.textContent = text;
+    t.hidden = false;
+    clearTimeout(t._t);
+    t._t = setTimeout(() => { t.hidden = true; }, 2500);
+  },
   sheet: {
     open(html) {
       const wrap = $('#sheet');

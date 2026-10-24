@@ -66,7 +66,23 @@
     state.recentItems = state.recentItems.slice(0, RECENT_MAX);
   }
 
-  const Days = { MEALS, get, addItems, updateItem, removeItem, addWater, addCoffee, removeCoffee, setSteps, totals, remaining, saveMeal, pushRecent };
+  // הארוחה שמוצעת לפי השעה
+  function defaultMeal(hour) {
+    if (hour >= 5 && hour < 11) return 'breakfast';
+    if (hour >= 11 && hour < 16) return 'lunch';
+    if (hour >= 16 && hour < 21) return 'dinner';
+    return 'snacks';
+  }
+
+  // שינוי כמות: כל הערכים משתנים באותו יחס
+  function scaleItem(item, grams) {
+    const k = item.grams > 0 ? grams / item.grams : 1;
+    const out = { ...item, grams };
+    for (const key of NUTRIENTS) out[key] = round1((Number(item[key]) || 0) * k);
+    return out;
+  }
+
+  const Days = { MEALS, defaultMeal, scaleItem, get, addItems, updateItem, removeItem, addWater, addCoffee, removeCoffee, setSteps, totals, remaining, saveMeal, pushRecent };
   if (typeof module !== 'undefined') module.exports = Days;
   else root.Days = Days;
 })(this);

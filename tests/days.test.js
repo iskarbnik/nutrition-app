@@ -90,3 +90,29 @@ test('saved meal keeps a copy of the items', () => {
   assert.equal(s.savedMeals[0].items[0].kcal, 180);
   assert.ok(s.savedMeals[0].id);
 });
+
+test('default meal follows the hour of day', () => {
+  assert.equal(Days.defaultMeal(7), 'breakfast');
+  assert.equal(Days.defaultMeal(10), 'breakfast');
+  assert.equal(Days.defaultMeal(11), 'lunch');
+  assert.equal(Days.defaultMeal(15), 'lunch');
+  assert.equal(Days.defaultMeal(16), 'dinner');
+  assert.equal(Days.defaultMeal(20), 'dinner');
+  assert.equal(Days.defaultMeal(21), 'snacks');
+  assert.equal(Days.defaultMeal(2), 'snacks');
+});
+
+test('scaleItem rescales every nutrient by grams', () => {
+  const it = { name: 'אורז', grams: 160, kcal: 208, protein: 4.3, fat: 0.5, carbs: 45, fiber: 0.6, sugar: 0, sodium: 2, source: 'list' };
+  const half = Days.scaleItem(it, 80);
+  assert.equal(half.grams, 80);
+  assert.equal(half.kcal, 104);
+  assert.equal(half.carbs, 22.5);
+  assert.equal(half.name, 'אורז');
+  assert.equal(it.grams, 160);
+});
+
+test('scaleItem with zero original grams keeps values', () => {
+  const it = { name: 'x', grams: 0, kcal: 50, protein: 1, fat: 1, carbs: 1, fiber: 0, sugar: 0, sodium: 0 };
+  assert.equal(Days.scaleItem(it, 100).kcal, 50);
+});
