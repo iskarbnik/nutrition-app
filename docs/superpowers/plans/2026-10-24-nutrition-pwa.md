@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Turn the existing steps 1-3 prototype into the full Hebrew RTL nutrition & weight PWA described in the spec: Plate-style UI, calorie/macro targets, meal logging (list, free text, photo via Claude), water/coffee/steps, weekly summary, reminders, IndexedDB storage with Google Drive sync/backup/restore, offline app shell, deployed on GitHub Pages.
+**Goal:** Turn the existing steps 1-3 prototype into the full Hebrew RTL nutrition & weight PWA described in the spec: Plate-style UI, calorie/macro targets, meal logging (list, free text, photo via Gemini or Claude, user's choice), water/coffee/steps, weekly summary, reminders, IndexedDB storage with Google Drive sync/backup/restore, offline app shell, deployed on GitHub Pages.
 
 **Architecture:** Vanilla JS, no build step. Each logic module is a plain script that attaches one global (`window.X`) and also exports via `module.exports` when `module` exists, so the same file runs in the browser and under `node --test`. Pure logic (targets, day totals, foods search, AI parsing, sync decisions, reminders, week stats) lives in testable modules; DOM code lives in `js/ui/*.js`, one file per screen. State is one in-memory object, persisted to IndexedDB and mirrored to Drive.
 
-**Tech Stack:** HTML/CSS/JS (ES2020), IndexedDB, Service Worker, Google Identity Services + Drive REST v3, Claude Messages API (`claude-sonnet-5-5`), Node 24 built-in test runner (`node --test`).
+**Tech Stack:** HTML/CSS/JS (ES2020), IndexedDB, Service Worker, Google Identity Services + Drive REST v3, Gemini API or Claude Messages API (per user setting), Node 24 built-in test runner (`node --test`).
 
 **Spec:** `docs/superpowers/specs/2026-10-24-nutrition-pwa-design.md`
 
@@ -19,8 +19,11 @@
 - BMR: Mifflin-St Jeor; Katch-McArdle when body-fat % is known.
 - Trend: linear regression over last 28 days; warn when weekly loss > 1% of body weight.
 - Drive: scope `https://www.googleapis.com/auth/drive.file` only; visible folder `תזונה ומשקל`; `data.json` + `backups/YYYY-MM-DD.json`, keep last 30; backup before restore.
-- API key stored only on the device (IndexedDB `secrets` store), never in `data.json`.
-- Claude calls direct from browser with header `anthropic-dangerous-direct-browser-access: true`, model `claude-sonnet-5-5`.
+- AI provider chosen in settings: `settings.aiProvider` = `'gemini'` (default) | `'claude'`. One key per provider, stored only on the device (IndexedDB `secrets`, keys `geminiKey` / `claudeKey`), never in `data.json`.
+- Gemini: `POST https://generativelanguage.googleapis.com/v1beta/models/<model>:generateContent`, key in header `x-goog-api-key` (never in the URL), `generationConfig.responseMimeType: 'application/json'`.
+- Claude: `POST https://api.anthropic.com/v1/messages` with header `anthropic-dangerous-direct-browser-access: true`.
+- Model IDs live only in `js/config.js` (`AI_MODELS = {gemini: '<current Gemini Flash model>', claude: 'claude-sonnet-5-5'}`); check Google's current Flash model ID when implementing Task 6.
+- Settings shows next to the Gemini option: "בשכבה החינמית, Google עשויה להשתמש בנתונים לשיפור המוצרים".
 - Palette: ink `#1F3B33`, background `#F5F7F4`, protein `#7A8B3A`, carbs `#D9B46A`, fat `#B8324A`; font Rubik (fallback `system-ui`); dark mode via `prefers-color-scheme`.
 - Tests: `node --test tests/` from the project root must pass before every commit.
 
@@ -123,19 +126,26 @@ Replace localStorage with IndexedDB and a single in-memory state.
 - [ ] **Step 1: Failing tests** — `search('חביתה')` includes a name containing `חביתה`; query with niqqud matches the plain name; `search('')` → `[]`; `scale({kcal:155,...}, 50).kcal === 77.5`.
 - [ ] **Step 2:** FAIL → implement → PASS → commit `feat: food list and search`.
 
-### Task 6: Claude AI client
+### Task 6: AI client (Gemini and Claude)
 
-**Files:** Create `js/ai.js`, `tests/ai.test.js`
+**Files:** Create `js/config.js` (`AI_MODELS`; Task 12 adds `GOOGLE_CLIENT_ID`), `js/ai.js`, `tests/ai.test.js`
 
 **Interfaces:**
-- Produces:
-  - `AI.mealRequest({text?, imageBase64?, mediaType?}) -> body` — Messages API body, `model: 'claude-sonnet-5-5'`, `max_tokens: 1024`, system prompt (Hebrew food, Israeli portions, reply ONLY JSON `{"items":[{name,grams,kcal,protein,fat,carbs,fiber,sugar,sodium}]}`), image as base64 content block when present.
-  - `AI.parseMeal(text) -> {items: item[], error?: string}` — extracts the first `{...}` block, coerces numeric strings, drops items with missing name or negative/NaN kcal, sets `source:'ai'`.
-  - `AI.weeklyTipRequest(stats, sexWord) -> body` and `AI.parseTip(text) -> string` (≤ 300 chars).
-  - `AI.call(apiKey, body, fetchImpl = fetch) -> Promise<string>` — POST `https://api.anthropic.com/v1/messages` with `x-api-key`, `anthropic-version: 2023-06-01`, `anthropic-dangerous-direct-browser-access: true`; maps 401 → `Error('bad-key')`, network failure → `Error('offline')`, other → `Error('ai-failed')`.
-  - `AI.resizeImage(file, maxSide = 1024) -> Promise<{base64, mediaType}>` (browser only, canvas JPEG 0.8).
-- [ ] **Step 1: Failing tests** — `parseMeal` on `'הנה: {"items":[{"name":"חביתה","grams":"120","kcal":"180"}]} בתיאבון'` → one item with numeric `grams 120`, `kcal 180`; item with `kcal: -3` dropped; garbage → `{items: [], error}`; `call` with a fake fetch returning 401 rejects `bad-key`; request includes the browser-access header.
-- [ ] **Step 2:** FAIL → implement → PASS → commit `feat: Claude meal recognition client`.
+- Provider-neutral prompt: `AI.mealPrompt` (Hebrew food, Israeli portions, reply ONLY JSON `{"items":[{name,grams,kcal,protein,fat,carbs,fiber,sugar,sodium}]}`) and `AI.tipPrompt(stats, sexWord)` (≤ 300 chars, Hebrew, gendered by `sexWord`).
+- `AI.ask(provider, apiKey, {system, text?, imageBase64?, mediaType?}, fetchImpl = fetch) -> Promise<string>` — builds the request through an adapter and returns the model's text:
+  - `AI.adapters.gemini.build(model, input) -> {url, headers, body}` — `contents[0].parts` = text part + `inline_data {mime_type, data}` when image; `systemInstruction`; `responseMimeType 'application/json'` for meal requests; `extract(json) -> candidates[0].content.parts[0].text`.
+  - `AI.adapters.claude.build(model, input) -> {url, headers, body}` — `max_tokens 1024`, `system`, image as base64 content block; headers `x-api-key`, `anthropic-version: 2023-06-01`, `anthropic-dangerous-direct-browser-access: true`; `extract(json) -> content[0].text`.
+  - Errors from both: 400 with invalid key / 401 / 403 → `Error('bad-key')`; 429 → `Error('quota')`; network failure → `Error('offline')`; other → `Error('ai-failed')`.
+- `AI.parseMeal(text) -> {items: item[], error?: string}` — extracts the first `{...}` block, coerces numeric strings, drops items with missing name or negative/NaN kcal, sets `source:'ai'`.
+- `AI.parseTip(text) -> string` (trimmed, ≤ 300 chars).
+- `AI.resizeImage(file, maxSide = 1024) -> Promise<{base64, mediaType}>` (browser only, canvas JPEG 0.8).
+- [ ] **Step 1: Failing tests**
+  - `parseMeal('הנה: {"items":[{"name":"חביתה","grams":"120","kcal":"180"}]} בתיאבון')` → one item, `grams 120`, `kcal 180`; item with `kcal: -3` dropped; garbage → `{items: [], error}`.
+  - gemini `build`: URL has no `key=`; header `x-goog-api-key` set; image becomes `inline_data`.
+  - claude `build`: browser-access header present; image becomes a base64 block.
+  - `ask` with a fake fetch: 401 → rejects `bad-key`; 429 → `quota`; thrown `TypeError` → `offline`; 200 → returns the extracted text for each provider.
+- [ ] **Step 2:** Look up Google's current Gemini Flash model ID (official docs) and put it in `AI_MODELS.gemini`.
+- [ ] **Step 3:** FAIL → implement → PASS → commit `feat: AI client with Gemini and Claude providers`.
 
 ### Task 7: Plate design system and app shell restructure
 
@@ -148,7 +158,7 @@ Split `app.js` into a router plus per-screen modules and restyle to the Plate di
 **Interfaces:**
 - Produces: `Screens.<name> = {render(), init()}` for `home, meals, body, activity, settings`; `UI.sheet.open(html) -> rootEl`, `UI.sheet.close()`; CSS tokens `--ink --bg --card --protein --carbs --fat --over --radius-lg (24px) --radius-md (18px)`.
 - Home (`home.js`): SVG plate ring (r=16 viewBox 42, stroke 5) with three arcs proportional to grams eaten of protein/carbs/fat vs targets; center = remaining kcal (red + "חריגה של N" when over); macro row; tiles water / coffee / steps; weight card (latest, 7-day change, ETA from `Calc.trend`); sync badge placeholder (`#sync-badge`); "סיכום שבועי" entry. New user (targets `null`) → plate replaced by a card linking to settings.
-- Settings (`settings.js`) adds: computed targets shown with "דריסה ידנית" fields writing `profile.overrides` (empty field = automatic); Claude API key field (password input, stored with `DB.put('secrets','apiKey')`, shows "נשמר" + clear button, never rendered back in plain text).
+- Settings (`settings.js`) adds: computed targets shown with "דריסה ידנית" fields writing `profile.overrides` (empty field = automatic); AI section: provider choice Gemini (default, with the free-tier data note) / Claude, a key field per provider (password input, stored with `DB.put('secrets','geminiKey'|'claudeKey')`, shows "נשמר" + clear button, never rendered back in plain text), and a link to where each key is created (Google AI Studio / Anthropic Console).
 - `State.empty()` also gets `weekTips: {}` (used by Task 11).
 - [ ] **Step 1:** Implement; keep behaviour of measurements screen identical.
 - [ ] **Step 2:** Headless Edge screenshots at 390×844 of home (new user and seeded user), body, settings, light and dark (`--force-dark-mode`). Review against spec §7 and fix overlaps.
@@ -166,9 +176,10 @@ Split `app.js` into a router plus per-screen modules and restyle to the Plate di
   - Search: live results from `Foods.search(q, recent+saved)`, grams input (unit shortcut when defined), add.
   - Free text / photo: spinner "מחשב...", then a **review sheet** listing AI items with editable grams/kcal/macros (editing grams rescales the item proportionally); "הוספה" commits via `Days.addItems` + `Days.pushRecent`; "שמירה כארוחה" asks for a name.
   - Tap item → edit sheet (same fields) with delete (two-tap confirm, existing pattern).
-  - Errors: `bad-key` → message + link to settings; `offline` → "אין חיבור. אפשר לחפש ברשימה."; empty AI result → text kept, suggest search.
+  - AI calls go through `AI.ask(settings.aiProvider, key, ...)`; no key for the chosen provider → message + link to settings.
+  - Errors: `bad-key` → message + link to settings; `quota` → "נגמרה המכסה של הספק. אפשר לנסות מאוחר יותר או להחליף ספק בהגדרות."; `offline` → "אין חיבור. אפשר לחפש ברשימה."; empty AI result → text kept, suggest search.
 - [ ] **Step 1:** Implement.
-- [ ] **Step 2:** Headless Edge: seeded test page drives search add, edit, delete; AI path with stubbed `AI.call` returning a fixed JSON. Screenshot sheet and review sheet.
+- [ ] **Step 2:** Headless Edge: seeded test page drives search add, edit, delete; AI path with stubbed `AI.ask` returning a fixed JSON. Screenshot sheet and review sheet.
 - [ ] **Step 3:** Commit `feat: meals screen with search, AI text and photo`.
 
 ### Task 9: Water and coffee
@@ -176,7 +187,7 @@ Split `app.js` into a router plus per-screen modules and restyle to the Plate di
 **Files:** Modify `js/ui/home.js`, `js/ui/settings.js`
 
 - Home water tile: tap +0.25 L, long-press opens sheet with −/+ and goal; coffee tile: tap opens list of `coffeeTypes` (add one cup) and today's cups with remove.
-- Settings: water goal (L), coffee types CRUD (name + per-cup nutrition; or "חישוב עם AI" from a text like "הפוך עם חלב סויה" using `AI.mealRequest`).
+- Settings: water goal (L), coffee types CRUD (name + per-cup nutrition; or "חישוב עם AI" from a text like "הפוך עם חלב סויה" using `AI.ask` with `AI.mealPrompt`).
 - [ ] **Step 1:** Implement; coffee nutrition flows into `Days.totals` (already tested).
 - [ ] **Step 2:** Screenshot check; commit `feat: water and coffee tracking`.
 
