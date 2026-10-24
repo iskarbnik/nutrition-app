@@ -6,7 +6,7 @@
       claude: 'claude-sonnet-5-5',
     },
     // מזהה הלקוח מ-Google Cloud. ההסבר ב-docs/google-setup.md
-    GOOGLE_CLIENT_ID: '',
+    GOOGLE_CLIENT_ID: '1092508027930-1gr51u93tsobal2r9hcddi5no0ltvdda.apps.googleusercontent.com',
   };
   if (typeof module !== 'undefined') module.exports = Config;
   else root.Config = Config;
