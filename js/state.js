@@ -32,6 +32,26 @@
     },
   });
 
+  const MEALS = ['breakfast', 'lunch', 'dinner', 'snacks'];
+  const PROVIDERS = ['gemini', 'claude'];
+
+  // יום פגום מקובץ (שחזור או דרייב) מתוקן למבנה מלא, כדי שהסיכומים לא יקרסו
+  function normalizeDays(days) {
+    const out = {};
+    for (const [date, d] of Object.entries(days || {})) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !d || typeof d !== 'object') continue;
+      const meals = {};
+      for (const m of MEALS) meals[m] = Array.isArray(d.meals && d.meals[m]) ? d.meals[m] : [];
+      out[date] = {
+        meals,
+        water: Number(d.water) > 0 ? Number(d.water) : 0,
+        coffee: Array.isArray(d.coffee) ? d.coffee : [],
+        steps: Number.isFinite(Number(d.steps)) && d.steps !== null ? Number(d.steps) : null,
+      };
+    }
+    return out;
+  }
+
   // ממלא שדות חסרים מתוך מבנה ריק
   function migrate(raw) {
     const e = empty();
@@ -44,7 +64,7 @@
       updatedAt: raw.updatedAt || 0,
       profile: { ...e.profile, ...obj(raw.profile, {}) },
       measurements: arr(raw.measurements, []),
-      days: obj(raw.days, {}),
+      days: normalizeDays(obj(raw.days, {})),
       savedMeals: arr(raw.savedMeals, []),
       recentItems: arr(raw.recentItems, []),
       coffeeTypes: arr(raw.coffeeTypes, []),
@@ -53,6 +73,7 @@
         ...e.settings,
         ...settings,
         reminders: { ...e.settings.reminders, ...obj(settings.reminders, {}) },
+        aiProvider: PROVIDERS.includes(settings.aiProvider) ? settings.aiProvider : 'gemini',
       },
     };
   }

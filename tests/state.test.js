@@ -63,3 +63,18 @@ test('latestMeasurement merges the newest known weight and fat', () => {
   assert.deepEqual(State.latestMeasurement(s), { weight: 71.4, fat: 31 });
   assert.equal(State.latestMeasurement(State.empty()), null);
 });
+
+test('migrate repairs broken day entries so totals never crash', () => {
+  const s = State.migrate({ ...v1, days: { '2026-10-20': {}, '2026-10-21': { meals: { lunch: [{ name: 'x', kcal: 5 }] } }, bad: 7 } });
+  assert.deepEqual(Object.keys(s.days[ '2026-10-20' ].meals), ['breakfast', 'lunch', 'dinner', 'snacks']);
+  assert.equal(s.days['2026-10-20'].water, 0);
+  assert.deepEqual(s.days['2026-10-20'].coffee, []);
+  assert.equal(s.days['2026-10-21'].meals.lunch.length, 1);
+  assert.deepEqual(s.days['2026-10-21'].meals.dinner, []);
+  assert.equal(s.days.bad, undefined);
+});
+
+test('migrate falls back to gemini for an unknown AI provider', () => {
+  assert.equal(State.migrate({ ...v1, settings: { aiProvider: 'grok' } }).settings.aiProvider, 'gemini');
+  assert.equal(State.migrate({ ...v1, settings: { aiProvider: 'claude' } }).settings.aiProvider, 'claude');
+});

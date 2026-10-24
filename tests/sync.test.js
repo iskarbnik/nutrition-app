@@ -186,3 +186,26 @@ test('listBackups is newest first', async () => {
   const list = await Sync.listBackups(drive, fakeStore());
   assert.deepEqual(list.map(b => b.name), ['2026-10-05.json', '2026-10-02.json', '2026-10-01.json']);
 });
+
+test('run does nothing while the user has not chosen which data to keep', async () => {
+  const drive = fakeDrive();
+  const store = fakeStore(State.empty(), { pendingChoice: true });
+  assert.equal(await Sync.run(drive, store, TODAY), 'pending');
+  assert.equal(drive.calls.length, 0);
+});
+
+test('concurrent runs do not overlap and the second change still syncs', async () => {
+  const drive = fakeDrive();
+  const store = fakeStore();
+  const runner = Sync.serial();
+  const a = runner(drive, store, TODAY);
+  store.get().profile.name = 'אחרי';
+  store.get().updatedAt = 5;
+  await store.setMeta({ dirty: true });
+  const b = runner(drive, store, TODAY);
+  await Promise.all([a, b]);
+  const dataFiles = [...drive.files.values()].filter(f => f.name === 'data.json');
+  assert.equal(dataFiles.length, 1);
+  assert.equal(dataFiles[0].data.profile.name, 'אחרי');
+  assert.equal([...drive.files.values()].filter(f => f.name === 'backups').length, 1);
+});

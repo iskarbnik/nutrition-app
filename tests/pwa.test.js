@@ -34,3 +34,7 @@ test('manifest is Hebrew, RTL, standalone, with icons that exist', () => {
   assert.ok(m.icons.some(i => i.purpose === 'maskable'));
   for (const i of m.icons) assert.ok(fs.existsSync(path.join(ROOT, i.src)), `missing icon ${i.src}`);
 });
+
+test('service worker installs fresh copies, bypassing the HTTP cache', () => {
+  assert.ok(read('sw.js').includes("cache: 'reload'"));
+});

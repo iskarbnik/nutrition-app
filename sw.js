@@ -44,7 +44,8 @@ const NEVER = ['api.anthropic.com', 'generativelanguage.googleapis.com', 'www.go
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES)));
+  // cache: 'reload' עוקף את מטמון הדפדפן, כדי שלא יתערבבו קבצים ישנים וחדשים
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(FILES.map(f => new Request(f, { cache: 'reload' })))));
 });
 
 self.addEventListener('activate', e => {

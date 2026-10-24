@@ -7,9 +7,11 @@ const TITLES = {
   settings: 'הגדרות',
 };
 let current = 'home';
+let renderedDay = null;
 
 function go(screen) {
   current = screen;
+  renderedDay = today();
   $$('.screen').forEach(s => { s.hidden = s.dataset.screen !== screen; });
   $$('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.go === screen));
   $('#screen-title').textContent = TITLES[screen];
@@ -23,9 +25,22 @@ function start() {
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-go]');
     if (b && !e.defaultPrevented) go(b.dataset.go);
-    if (e.target.closest('[data-sheet-close]')) UI.sheet.close();
+    if (e.target.closest('[data-sheet-close]')) UI.sheet.dismiss();
+  });
+  window.addEventListener('popstate', () => {
+    if ($('#sheet').hidden) return;
+    if (UI.sheet.locked) { history.pushState({ sheet: true }, ''); return; }
+    UI.sheet.close(true);
   });
   window.addEventListener('state-replaced', () => go(current));
+
+  // יום חדש: אם האפליקציה נשארה פתוחה או ברקע מעבר לחצות, מציגים את היום הנכון
+  const refreshIfNewDay = () => { if (today() !== renderedDay) go(current); };
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) Store.flush(); else refreshIfNewDay();
+  });
+  window.addEventListener('pagehide', () => Store.flush());
+  setInterval(refreshIfNewDay, 60 * 1000);
   go('home');
 }
 

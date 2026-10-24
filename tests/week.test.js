@@ -66,3 +66,10 @@ test('a week with nothing logged is all zeros and nulls', () => {
   assert.equal(w.avgKcal, null);
   assert.equal(w.avgWater, null);
 });
+
+test('budget days are counted out of the days that had targets', () => {
+  const firstDay = Dates.addDays(END, -6);
+  const w = Week.stats(seeded(), d => (d === firstDay ? null : targets()), END);
+  assert.equal(w.daysWithTargets, 4);
+  assert.equal(w.daysInBudget, 3);
+});

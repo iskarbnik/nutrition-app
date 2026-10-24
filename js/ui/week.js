@@ -25,7 +25,7 @@
         ${row('ימים עם רישום', `${w.daysLogged} מתוך 7`)}
         ${row('ממוצע קלוריות ביום', w.avgKcal == null ? dash : fmt(w.avgKcal))}
         ${row('ממוצע חלבון ביום', w.avgProtein == null ? dash : `${w.avgProtein} ג'`)}
-        ${row('ימים בתוך התקציב', w.daysInBudget == null ? dash : `${w.daysInBudget} מתוך ${w.daysLogged}`)}
+        ${row('ימים בתוך התקציב', w.daysInBudget == null ? dash : `${w.daysInBudget} מתוך ${w.daysWithTargets}`)}
         ${row('משקל', change)}
         ${row('מים בממוצע', w.avgWater == null ? dash : `${w.avgWater} ל'`)}
         ${row('צעדים בממוצע', w.avgSteps == null ? dash : fmt(w.avgSteps))}

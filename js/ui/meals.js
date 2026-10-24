@@ -40,7 +40,7 @@
     $('#meal-cards').innerHTML = Days.MEALS.map(m => {
       const items = day ? day.meals[m] : [];
       const rows = items.map((it, i) => `
-        <button type="button" class="item-row" data-meal="${m}" data-i="${i}">
+        <button type="button" class="item-row" data-meal="${m}" data-i="${i}" data-date="${d}">
           <span class="item-name">${esc(it.name)}</span>
           <span class="item-grams">${it.grams ? fmt(it.grams) + ' ג\'' : ''}</span>
           <b>${fmt(it.kcal)}</b>
@@ -320,8 +320,11 @@
     sum();
   }
 
-  function viewEdit(m, index) {
-    const original = Store.get().days[today()].meals[m][index];
+  // date: היום שהוצג במסך, גם אם בינתיים עבר חצות
+  function viewEdit(m, index, date) {
+    const day = Store.get().days[date];
+    const original = day && day.meals[m][index];
+    if (!original) return render();
     const items = [{ ...original }];
     const root = UI.sheet.open(`
       <h3 class="sheet-title">עריכה</h3>
@@ -330,12 +333,12 @@
       <button type="button" class="btn del-wide" id="del"></button>`);
     wireEditors(root, items);
     $('#save', root).addEventListener('click', () => {
-      Store.mutate(s => Days.updateItem(s, today(), m, index, items[0]));
+      Store.mutate(s => Days.updateItem(s, date, m, index, items[0]));
       UI.sheet.close();
       render();
     });
     twoTap($('#del', root), () => {
-      Store.mutate(s => Days.removeItem(s, today(), m, index));
+      Store.mutate(s => Days.removeItem(s, date, m, index));
       UI.sheet.close();
       render();
     });
@@ -348,7 +351,7 @@
       const add = e.target.closest('[data-add]');
       if (add) return openAdd(add.dataset.add);
       const row = e.target.closest('.item-row');
-      if (row) viewEdit(row.dataset.meal, Number(row.dataset.i));
+      if (row) viewEdit(row.dataset.meal, Number(row.dataset.i), row.dataset.date);
     });
   }
 

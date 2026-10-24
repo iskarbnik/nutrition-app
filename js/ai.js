@@ -91,25 +91,33 @@
 
   const NUMS = ['grams', 'kcal', 'protein', 'fat', 'carbs', 'fiber', 'sugar', 'sodium'];
 
-  function parseMeal(text) {
-    const s = String(text || '');
-    const start = s.indexOf('{');
-    const end = s.lastIndexOf('}');
-    let data;
-    try {
-      data = JSON.parse(s.slice(start, end + 1));
-    } catch {
-      return { items: [], error: 'no-json' };
+  // מנסה למצוא JSON בתוך טקסט: מכל "{" או "[" ועד הסוגר האחרון המתאים
+  function findJson(s) {
+    for (let i = 0; i < s.length; i++) {
+      const open = s[i];
+      if (open !== '{' && open !== '[') continue;
+      const end = s.lastIndexOf(open === '{' ? '}' : ']');
+      if (end <= i) continue;
+      try { return JSON.parse(s.slice(i, end + 1)); } catch { /* ננסה מהסוגר הבא */ }
     }
-    const raw = Array.isArray(data && data.items) ? data.items : [];
+    return undefined;
+  }
+
+  // "1,200" → 1200
+  const num = v => Number(String(v ?? '').replace(/,/g, '').trim());
+
+  function parseMeal(text) {
+    const data = findJson(String(text || ''));
+    if (data === undefined) return { items: [], error: 'no-json' };
+    const raw = Array.isArray(data) ? data : Array.isArray(data && data.items) ? data.items : [];
     const items = [];
     for (const r of raw) {
       if (!r || typeof r.name !== 'string' || !r.name.trim()) continue;
-      const kcal = Number(r.kcal);
+      const kcal = num(r.kcal);
       if (!Number.isFinite(kcal) || kcal < 0) continue;
       const it = { name: r.name.trim(), source: 'ai' };
       for (const k of NUMS) {
-        const v = Number(r[k]);
+        const v = num(r[k]);
         it[k] = Number.isFinite(v) && v >= 0 ? Math.round(v * 10) / 10 : 0;
       }
       items.push(it);

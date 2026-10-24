@@ -4,7 +4,6 @@ const Store = (() => {
   const LEGACY_KEY = 'ori-nutrition';
   let state = State.empty();
   let meta = { dirty: false, lastSyncAt: 0, lastBackupDate: null, driveFolderId: null, dataFileId: null };
-  let timer;
 
   let persistent = true;
 
@@ -13,6 +12,8 @@ const Store = (() => {
     try {
       await load();
     } catch {
+      // ניסיון שני, ואם גם הוא נכשל עובדים מהזיכרון
+      try { await load(); return state; } catch { /* נמשיך */ }
       persistent = false;
       state = State.migrate(readLegacy());
     }
@@ -45,12 +46,10 @@ const Store = (() => {
   // כתיבה שקטה: בלי אחסון, הנתונים נשארים רק בזיכרון
   const write = (key, value) => (persistent ? DB.put('kv', key, value).catch(() => {}) : Promise.resolve());
 
-  function persist() {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      write('state', state);
-      write('meta', meta);
-    }, 300);
+  // כתיבה מיידית בכל שינוי: דפדפן שנסגר באמצע מבטל כתיבה שעוד לא התחילה
+  function flush() {
+    write('state', state);
+    write('meta', meta);
   }
 
   function setMeta(patch) {
@@ -62,7 +61,7 @@ const Store = (() => {
     fn(state);
     state.updatedAt = Date.now();
     meta.dirty = true;
-    persist();
+    flush();
     window.dispatchEvent(new Event('state-changed'));
     return true;
   }
@@ -83,5 +82,5 @@ const Store = (() => {
 
   const isPersistent = () => persistent;
 
-  return { init, isPersistent, get, getMeta, setMeta, mutate, replace, updateProfile, upsertMeasurement, deleteMeasurement, measurementOn };
+  return { init, flush, isPersistent, get, getMeta, setMeta, mutate, replace, updateProfile, upsertMeasurement, deleteMeasurement, measurementOn };
 })();

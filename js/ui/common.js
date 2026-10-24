@@ -47,18 +47,36 @@ const UI = {
     clearTimeout(t._t);
     t._t = setTimeout(() => { t.hidden = true; }, 2500);
   },
+  // open(html) או open({ locked: true }, html). חלונית נעולה לא נסגרת בלחיצה בחוץ או בכפתור "חזרה"
+  // כפתור "חזרה" של אנדרואיד סוגר את החלונית ולא את האפליקציה
   sheet: {
-    open(html) {
-      const wrap = $('#sheet');
-      $('#sheet-body').innerHTML = html;
-      wrap.hidden = false;
+    locked: false,
+    inHistory: false,
+    open(a, b) {
+      const opts = typeof a === 'string' ? {} : a;
+      this.locked = !!opts.locked;
+      $('#sheet-body').innerHTML = typeof a === 'string' ? a : b;
+      $('#sheet').hidden = false;
       document.body.classList.add('sheet-open');
+      if (!this.inHistory) {
+        history.pushState({ sheet: true }, '');
+        this.inHistory = true;
+      }
       return $('#sheet-body');
     },
-    close() {
+    close(fromBack = false) {
+      if ($('#sheet').hidden) return;
       $('#sheet').hidden = true;
       document.body.classList.remove('sheet-open');
       $('#sheet-body').innerHTML = '';
+      this.locked = false;
+      if (this.inHistory) {
+        this.inHistory = false;
+        if (!fromBack) history.back();
+      }
+    },
+    dismiss() {
+      if (!this.locked) this.close();
     },
   },
 };

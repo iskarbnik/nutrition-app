@@ -49,8 +49,10 @@
     return 'synced';
   }
 
-  // מחזיר 'synced' | 'offline' | 'auth' | 'error'
+  // מחזיר 'synced' | 'offline' | 'auth' | 'error' | 'pending'
   async function run(drive, store, today) {
+    // המשתמש עוד לא בחר בין הנתונים בדרייב לנתונים בטלפון: לא נוגעים בדרייב
+    if (store.getMeta().pendingChoice) return 'pending';
     try {
       try {
         return await attempt(drive, store, today);
@@ -91,7 +93,25 @@
     await store.setMeta({ dirty: true });
   }
 
-  const Sync = { backupsToPrune, needsBackup, run, refresh, listBackups, restore };
+  // סנכרון אחד בכל פעם. בקשה בזמן ריצה גורמת לריצה נוספת אחת בסוף
+  function serial() {
+    let running = null;
+    let again = false;
+    return async function (drive, store, today) {
+      if (running) { again = true; return running; }
+      running = (async () => {
+        let result;
+        do {
+          again = false;
+          result = await run(drive, store, today);
+        } while (again);
+        return result;
+      })();
+      try { return await running; } finally { running = null; }
+    };
+  }
+
+  const Sync = { backupsToPrune, needsBackup, run, serial, refresh, listBackups, restore };
   if (typeof module !== 'undefined') module.exports = Sync;
   else root.Sync = Sync;
 })(this);

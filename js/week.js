@@ -38,6 +38,7 @@
       avgKcal: a(totals, 'kcal'),
       avgProtein: a(totals, 'protein'),
       daysInBudget,
+      daysWithTargets: withTargets.length,
       weightChange,
       avgWater: w == null ? null : round1(w),
       avgSteps: s == null ? null : Math.round(s),

@@ -80,3 +80,18 @@ test('ask returns the model text for each provider', async () => {
   assert.equal(g, 'G');
   assert.equal(c, 'C');
 });
+
+test('parseMeal accepts a bare array of items', () => {
+  const r = AI.parseMeal('[{"name":"תפוח","grams":180,"kcal":94}]');
+  assert.deepEqual(r.items.map(i => i.name), ['תפוח']);
+});
+
+test('parseMeal finds the JSON even after a stray brace in the prose', () => {
+  const r = AI.parseMeal('הערכה {בערך}: {"items":[{"name":"לחם","grams":30,"kcal":75}]}');
+  assert.deepEqual(r.items.map(i => i.name), ['לחם']);
+});
+
+test('parseMeal strips thousands separators', () => {
+  const r = AI.parseMeal('{"items":[{"name":"פיצה","grams":"450","kcal":"1,200"}]}');
+  assert.equal(r.items[0].kcal, 1200);
+});

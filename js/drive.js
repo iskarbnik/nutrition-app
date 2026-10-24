@@ -25,6 +25,12 @@
   }
 
   const hasToken = () => !!token && Date.now() < expiry - 60000;
+  const tokenInfo = () => ({ token, expiry });
+  // חיבור שנשמר בטלפון (עד שעה), כדי שפתיחה מחדש של האפליקציה לא תדרוש התחברות
+  function useToken(info) {
+    if (info && info.token && info.expiry > Date.now()) { token = info.token; expiry = info.expiry; }
+  }
+  const preload = () => loadGis().catch(() => {});
   const isConfigured = () => !!(root.Config && root.Config.GOOGLE_CLIENT_ID);
 
   // interactive=true רק מתוך לחיצה של המשתמש (אחרת הדפדפן חוסם את החלון)
@@ -119,5 +125,5 @@
     try { return await res.json(); } catch { throw new Error('invalid'); }
   }
 
-  root.Drive = { isConfigured, hasToken, connect, disconnect, ensureFolder, ensureSubfolder, findFile, upload, list, remove, download };
+  root.Drive = { isConfigured, hasToken, tokenInfo, useToken, preload, connect, disconnect, ensureFolder, ensureSubfolder, findFile, upload, list, remove, download };
 })(this);
