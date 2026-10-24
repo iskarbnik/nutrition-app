@@ -158,7 +158,12 @@
     const provider = Store.get().settings.aiProvider;
     const key = await Secrets.get(PROVIDERS[provider].key);
     if (!key) return showStatus(status, 'צריך להזין מפתח AI למטה', false);
-    showStatus(status, 'מחשב...', true);
+    // הודעת ההמתנה נשארת עד שמגיעה תשובה
+    status.textContent = 'מחשב...';
+    status.className = 'status ok';
+    clearTimeout(status._t);
+    const btn = $('#coffee-ai');
+    btn.disabled = true;
     try {
       const { items } = AI.parseMeal(await AI.ask(provider, key, { system: AI.mealPrompt, json: true, text: `כוס אחת: ${name}` }));
       if (!items.length) return showStatus(status, 'לא הצלחתי לחשב. אפשר למלא ידנית.', false);
@@ -169,9 +174,12 @@
         offline: 'אין חיבור לאינטרנט',
         'bad-key': 'המפתח של ספק ה-AI לא תקין',
         quota: 'נגמרה המכסה של הספק. אפשר לנסות מאוחר יותר.',
+        timeout: 'הספק לא ענה בזמן. אפשר לנסות שוב.',
       }[err.message] || 'החישוב נכשל. אפשר למלא ידנית.';
-      const detail = err.status ? `${err.status}: ${err.detail}` : err.message !== 'ai-failed' && err.message;
+      const detail = err.status ? `${err.status}: ${err.detail}` : !['ai-failed', 'timeout', 'offline', 'bad-key', 'quota'].includes(err.message) && err.message;
       showStatus(status, detail ? `${msg} (${detail})` : msg, false);
+    } finally {
+      btn.disabled = false;
     }
   }
 

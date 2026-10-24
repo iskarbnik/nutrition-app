@@ -117,7 +117,8 @@
       <h3 class="sheet-title">קפה היום</h3>
       ${s.coffeeTypes.length
         ? `<div class="list">${s.coffeeTypes.map(c => `
-            <button type="button" class="list-main" data-cup="${c.id}"><span>+ ${esc(c.name)}</span><small>${fmt(c.kcal)} קל'</small></button>`).join('')}</div>`
+            <button type="button" class="list-main" data-cup="${c.id}"><span>+ ${esc(c.name)}</span><small>${fmt(c.kcal)} קל'</small></button>`).join('')}</div>
+           <button type="button" class="btn-link manage" id="to-settings">הוספה ומחיקה של סוגי קפה</button>`
         : `<p class="sheet-msg">עוד אין סוגי קפה. מוסיפים אותם בהגדרות, פעם אחת.</p>
            <button type="button" class="btn primary" id="to-settings">להגדרות</button>`}
       ${cups.length ? `<h4 class="sheet-sub">נרשמו היום</h4><div class="cups">${cups.map((id, i) =>
@@ -133,7 +134,12 @@
       openCoffee();
     }));
     const ts = $('#to-settings', root);
-    if (ts) ts.addEventListener('click', () => { UI.sheet.close(); go('settings'); });
+    if (ts) ts.addEventListener('click', () => {
+      // סגירת החלונית חוזרת אחורה בהיסטוריה, והדפדפן מחזיר את הגלילה. גוללים רק אחרי זה
+      addEventListener('popstate', () => setTimeout(() => $('#coffee-types').scrollIntoView({ block: 'center' })), { once: true });
+      UI.sheet.close();
+      go('settings');
+    });
   }
 
   function init() {

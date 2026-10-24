@@ -122,3 +122,10 @@ test('failed calls carry the HTTP status and the provider message for display', 
     return true;
   });
 });
+
+test('a request with no answer stops after the timeout with timeout', async () => {
+  const hang = (url, opts) => new Promise((_, reject) => {
+    opts.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+  });
+  await assert.rejects(AI.ask('gemini', 'k', { text: 'x' }, hang, 30), { message: 'timeout' });
+});

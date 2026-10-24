@@ -67,17 +67,22 @@
   // הדבקה בטלפון מוסיפה לפעמים סימני כיוון נסתרים או טקסט, והדפדפן מסרב לשלוח כותרת כזו
   const cleanKey = key => String(key || '').replace(/[^A-Za-z0-9_.-]/g, '');
 
-  async function ask(provider, apiKey, input, fetchImpl) {
+  // timeoutMs: בלי תשובה עד אז מפסיקים, כדי שהמסך לא ייתקע על "מחשב..."
+  async function ask(provider, apiKey, input, fetchImpl, timeoutMs = 60000) {
     const doFetch = fetchImpl || ((...a) => fetch(...a));
     const adapter = adapters[provider];
     const key = cleanKey(apiKey);
     if (!key) throw new Error('bad-key');
     const req = adapter.build(Config.AI_MODELS[provider], input, key);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
     let res;
     try {
-      res = await doFetch(req.url, { method: 'POST', headers: req.headers, body: JSON.stringify(req.body) });
+      res = await doFetch(req.url, { method: 'POST', headers: req.headers, body: JSON.stringify(req.body), signal: ctrl.signal });
     } catch {
-      throw new Error('offline');
+      throw new Error(ctrl.signal.aborted ? 'timeout' : 'offline');
+    } finally {
+      clearTimeout(timer);
     }
     if (!res.ok) {
       const text = await res.text().catch(() => '');
