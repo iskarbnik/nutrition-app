@@ -95,3 +95,20 @@ test('parseMeal strips thousands separators', () => {
   const r = AI.parseMeal('{"items":[{"name":"פיצה","grams":"450","kcal":"1,200"}]}');
   assert.equal(r.items[0].kcal, 1200);
 });
+
+test('cleanKey strips invisible direction marks, spaces and pasted labels', () => {
+  assert.equal(AI.cleanKey('‏AIza-Key_123‎ '), 'AIza-Key_123');
+  assert.equal(AI.cleanKey('מפתח: AIzaKey'), 'AIzaKey');
+  assert.equal(AI.cleanKey('sk-ant-api03-AbC\n'), 'sk-ant-api03-AbC');
+});
+
+test('ask sends a clean key even if a dirty one was saved', async () => {
+  let sent;
+  const spy = async (url, opts) => { sent = opts.headers; return { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: 'x' }] } }] }) }; };
+  await AI.ask('gemini', '‏AIzaGoodKey‎', input, spy);
+  assert.equal(sent['x-goog-api-key'], 'AIzaGoodKey');
+});
+
+test('a key that is empty after cleaning is bad-key, not offline', async () => {
+  await assert.rejects(AI.ask('gemini', '‏‎', input, fakeFetch(200, {})), { message: 'bad-key' });
+});

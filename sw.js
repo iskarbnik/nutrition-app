@@ -1,6 +1,6 @@
 // Service worker: קבצי האפליקציה נשמרים בטלפון, כדי שתעבוד גם בלי אינטרנט
 // בכל שינוי בקבצים מעלים את מספר הגרסה, והאפליקציה תציע לעדכן
-const VERSION = 'app-v1';
+const VERSION = 'app-v2';
 const FONTS = 'fonts-v1';
 
 const FILES = [

@@ -106,7 +106,7 @@
   }
 
   async function onKeySave() {
-    const value = $('#ai-key').value.trim();
+    const value = AI.cleanKey($('#ai-key').value);
     const status = $('#ai-status');
     if (value.length < 20) return showStatus(status, 'המפתח נראה קצר מדי. כדאי להעתיק אותו שוב.', false);
     await Secrets.set(PROVIDERS[Store.get().settings.aiProvider].key, value);

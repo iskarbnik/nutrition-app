@@ -42,6 +42,10 @@
   // חיבור ראשון במכשיר: אם כבר יש נתונים בדרייב, שואלים מה לעשות
   // עד שנבחרה תשובה, pendingChoice חוסם כל סנכרון, כדי לא לדרוס את הדרייב
   async function connect() {
+    if (!Drive.isConfigured()) {
+      UI.toast('הגיבוי לדרייב עוד לא זמין בגרסה הזו. הנתונים נשמרים בינתיים בטלפון.');
+      return;
+    }
     try {
       await Drive.connect(true);
       await Secrets.set('driveToken', Drive.tokenInfo());
@@ -144,10 +148,9 @@
     const meta = Store.getMeta();
     $('#drive-connect').hidden = on && Drive.hasToken();
     $('#drive-connect').textContent = on ? 'התחברות מחדש' : 'חיבור לגוגל דרייב';
-    $('#drive-connect').disabled = !configured;
     $('#drive-actions').hidden = !(on && Drive.hasToken());
     let text;
-    if (!configured) text = 'החיבור לגוגל עוד לא הוגדר באפליקציה (מזהה לקוח של Google חסר).';
+    if (!configured) text = 'הגיבוי לדרייב עוד לא זמין בגרסה הזו. הנתונים נשמרים בינתיים בטלפון.';
     else if (!on) text = 'לא מחובר. הנתונים נשמרים רק בטלפון.';
     else if (!Drive.hasToken()) text = 'החיבור לגוגל פג. צריך להתחבר מחדש, הנתונים בטלפון בטוחים.';
     else text = `${LABELS[status] || 'מחובר'}${meta.lastSyncAt ? `. סנכרון אחרון: ${new Date(meta.lastSyncAt).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`;

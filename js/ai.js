@@ -63,10 +63,16 @@
     },
   };
 
+  // מפתחות של Gemini ו-Claude בנויים רק מאותיות באנגלית, ספרות, "-", "_" ו-".".
+  // הדבקה בטלפון מוסיפה לפעמים סימני כיוון נסתרים או טקסט, והדפדפן מסרב לשלוח כותרת כזו
+  const cleanKey = key => String(key || '').replace(/[^A-Za-z0-9_.-]/g, '');
+
   async function ask(provider, apiKey, input, fetchImpl) {
     const doFetch = fetchImpl || ((...a) => fetch(...a));
     const adapter = adapters[provider];
-    const req = adapter.build(Config.AI_MODELS[provider], input, apiKey);
+    const key = cleanKey(apiKey);
+    if (!key) throw new Error('bad-key');
+    const req = adapter.build(Config.AI_MODELS[provider], input, key);
     let res;
     try {
       res = await doFetch(req.url, { method: 'POST', headers: req.headers, body: JSON.stringify(req.body) });
@@ -145,7 +151,7 @@
     });
   }
 
-  const AI = { mealPrompt, tipPrompt, adapters, ask, parseMeal, parseTip, resizeImage };
+  const AI = { mealPrompt, tipPrompt, adapters, cleanKey, ask, parseMeal, parseTip, resizeImage };
   if (typeof module !== 'undefined') module.exports = AI;
   else root.AI = AI;
 })(this);
