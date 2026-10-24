@@ -22,6 +22,7 @@
       <p id="home-date" class="home-date"></p>
       <h2 id="home-hello" class="home-hello"></h2>
       <p id="home-warn" class="banner warn" hidden></p>
+      <div id="home-reminders"></div>
 
       <div id="home-setup" class="card setup" hidden>
         <p id="home-setup-text"></p>
@@ -220,6 +221,30 @@
         </div>
       </div>
 
+      <div class="card" id="reminders-card">
+        <h2>תזכורות</h2>
+        <div class="rem-row">
+          <label class="switch"><input type="checkbox" id="rem-weigh"><span></span> שקילה בבוקר</label>
+          <input type="time" id="rem-weigh-time" aria-label="שעת שקילה">
+        </div>
+        <div class="rem-row">
+          <label class="switch"><input type="checkbox" id="rem-water"><span></span> מים, כל</label>
+          <select id="rem-water-every" aria-label="כל כמה שעות">
+            <option value="1">שעה</option><option value="2">שעתיים</option><option value="3">3 שעות</option>
+          </select>
+        </div>
+        <div class="rem-row">
+          <label class="switch"><input type="checkbox" id="rem-meals"><span></span> ארוחות שלא נרשמו</label>
+        </div>
+        <div class="rem-times" id="rem-meal-times">
+          <label>בוקר<input type="time" data-i="0"></label>
+          <label>צהריים<input type="time" data-i="1"></label>
+          <label>ערב<input type="time" data-i="2"></label>
+        </div>
+        <p class="hint">בלי שרת, התזכורות מגיעות בצורה אמינה רק כשהאפליקציה פתוחה או הייתה פתוחה לא מזמן. מה שהוחמץ מוצג כשפותחים את האפליקציה.</p>
+        <p id="rem-status" class="status" role="status"></p>
+      </div>
+
       <div class="card" id="drinks-card">
         <h2>מים וקפה</h2>
         <label>יעד מים יומי (ליטר)
@@ -289,6 +314,7 @@
   <script src="js/days.js"></script>
   <script src="js/week.js"></script>
   <script src="js/sync.js"></script>
+  <script src="js/reminders.js"></script>
   <script src="js/drive.js"></script>
   <script src="js/foods.js"></script>
   <script src="js/ai.js"></script>
@@ -301,6 +327,7 @@
   <script src="js/ui/activity.js"></script>
   <script src="js/ui/week.js"></script>
   <script src="js/ui/cloud.js"></script>
+  <script src="js/ui/reminders.js"></script>
   <script src="js/ui/settings.js"></script>
   <script src="js/app.js"></script>
 </body>

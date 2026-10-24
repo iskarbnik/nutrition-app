@@ -175,6 +175,7 @@
     fillDrinks();
     fillAI();
     if (Screens.cloud) Screens.cloud.render();
+    if (Screens.reminders) Screens.reminders.render();
   }
 
   function init() {

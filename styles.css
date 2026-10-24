@@ -498,3 +498,20 @@ section[data-screen="meals"] { padding-bottom: 76px; }
 #drive-actions .btn { margin-top: 8px; }
 .sync-badge { border: 0; cursor: pointer; }
 .btn:disabled { cursor: not-allowed; }
+
+/* תזכורות */
+.rem-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.rem-row input[type="time"], .rem-row select { width: auto; margin: 0; padding: 8px 10px; }
+input[type="time"] { font: inherit; color: var(--text); background: var(--field); border: 1px solid transparent; border-radius: var(--radius-sm); padding: 10px; }
+.rem-times { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+.rem-times label { margin: 0; font-size: 0.8rem; }
+.rem-times input { width: 100%; min-width: 0; margin-top: 4px; padding: 8px 4px; font-size: 0.85rem; }
+.switch { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--text); font-size: 0.95rem; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch span { position: relative; flex: none; width: 44px; height: 26px; border-radius: 999px; background: var(--line); transition: background 0.2s; }
+.switch span::after { content: ''; position: absolute; top: 3px; inset-inline-start: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: inset-inline-start 0.2s; }
+.switch input:checked + span { background: var(--ink); }
+.switch input:checked + span::after { inset-inline-start: 21px; }
+.switch input:focus-visible + span { outline: 2px solid var(--protein); outline-offset: 2px; }
+.reminder { display: flex; align-items: center; gap: 10px; background: var(--card); border-inline-start: 4px solid var(--carbs); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 10px; font-size: 0.9rem; }
+.reminder span { flex: 1; }
