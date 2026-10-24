@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2f7d5b">
+  <title>תזונה ומשקל</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1 id="screen-title">ראשי</h1>
+  </header>
+
+  <main id="app">
+    <!-- ראשי -->
+    <section class="screen" data-screen="home">
+      <div class="card">
+        <h2 id="home-hello">שלום</h2>
+        <p id="home-msg" class="muted"></p>
+      </div>
+    </section>
+
+    <!-- ארוחות -->
+    <section class="screen" data-screen="meals" hidden>
+      <div class="card"><p class="muted">רישום ארוחות יגיע בשלב 5.</p></div>
+    </section>
+
+    <!-- מדדים -->
+    <section class="screen" data-screen="body" hidden>
+      <div class="card">
+        <div class="seg-tabs" id="chart-metric">
+          <button type="button" data-metric="weight" class="on">משקל</button>
+          <button type="button" data-metric="fat">אחוז שומן</button>
+          <button type="button" data-metric="waist">מותניים</button>
+        </div>
+        <div class="seg-tabs small" id="chart-range">
+          <button type="button" data-range="30">חודש</button>
+          <button type="button" data-range="90" class="on">3 חודשים</button>
+          <button type="button" data-range="all">הכול</button>
+        </div>
+        <div id="chart" class="chart-wrap" dir="ltr"></div>
+        <div id="chart-legend" class="legend"></div>
+        <p id="chart-trend" class="trend"></p>
+      </div>
+
+      <form id="measure-form" class="card" novalidate>
+        <h2>מדידה חדשה</h2>
+
+        <label>תאריך
+          <input name="date" type="date" required>
+        </label>
+
+        <div class="grid2">
+          <label>משקל (ק"ג)
+            <input name="weight" type="number" inputmode="decimal" min="30" max="300" step="0.1">
+          </label>
+          <label>אחוז שומן
+            <input name="fat" type="number" inputmode="decimal" min="3" max="70" step="0.1">
+          </label>
+          <label>היקף מותניים (ס"מ)
+            <input name="waist" type="number" inputmode="decimal" min="40" max="200" step="0.5">
+          </label>
+          <label>גובה (ס"מ)
+            <input name="height" type="number" inputmode="decimal" min="120" max="230" step="0.5">
+          </label>
+        </div>
+
+        <label class="check" id="cycle-row"><input type="checkbox" name="cycle"> יום מחזור</label>
+
+        <p class="hint muted">אפשר למלא רק חלק מהשדות. מדידה בתאריך קיים מעדכנת אותו.</p>
+        <button type="submit" class="btn primary">שמירה</button>
+        <p id="measure-status" class="status" role="status"></p>
+      </form>
+
+      <div class="card">
+        <h2>היסטוריה</h2>
+        <p id="measure-empty" class="muted">עוד אין מדידות.</p>
+        <ul id="measure-list" class="mlist"></ul>
+      </div>
+    </section>
+
+    <!-- פעילות -->
+    <section class="screen" data-screen="activity" hidden>
+      <div class="card"><p class="muted">דף הפעילות יגיע בשלב 8.</p></div>
+    </section>
+
+    <!-- הגדרות -->
+    <section class="screen" data-screen="settings" hidden>
+      <form id="profile-form" class="card" novalidate>
+        <h2>פרטים אישיים</h2>
+
+        <label>שם
+          <input name="name" type="text" autocomplete="off">
+        </label>
+
+        <label>שנת לידה
+          <input name="birthYear" type="number" inputmode="numeric" min="1920" max="2015">
+        </label>
+
+        <fieldset class="seg">
+          <legend>מין</legend>
+          <label><input type="radio" name="sex" value="male"> זכר</label>
+          <label><input type="radio" name="sex" value="female"> נקבה</label>
+        </fieldset>
+
+        <label>גובה (ס"מ)
+          <input name="height" type="number" inputmode="decimal" min="120" max="230" step="0.5">
+        </label>
+
+        <label>רמת פעילות
+          <select name="activity">
+            <option value="1.2">יושבני (כמעט בלי פעילות)</option>
+            <option value="1.375">קלה (1-3 אימונים בשבוע)</option>
+            <option value="1.55">בינונית (3-5 אימונים בשבוע)</option>
+            <option value="1.725">גבוהה (6-7 אימונים בשבוע)</option>
+          </select>
+        </label>
+
+        <label>משקל יעד (ק"ג)
+          <input name="goalWeight" type="number" inputmode="decimal" min="35" max="250" step="0.1">
+        </label>
+
+        <label>אחוז שומן יעד (לא חובה)
+          <input name="goalFat" type="number" inputmode="decimal" min="3" max="60" step="0.1">
+        </label>
+
+        <button type="submit" class="btn primary">שמירה</button>
+        <p id="profile-status" class="status" role="status"></p>
+      </form>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button data-go="home" class="active"><span class="ico">🏠</span>ראשי</button>
+    <button data-go="meals"><span class="ico">🍽️</span>ארוחות</button>
+    <button data-go="body"><span class="ico">⚖️</span>מדדים</button>
+    <button data-go="activity"><span class="ico">👟</span>פעילות</button>
+    <button data-go="settings"><span class="ico">⚙️</span>הגדרות</button>
+  </nav>
+
+  <script src="store.js"></script>
+  <script src="charts.js"></script>
+  <script src="calc.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
