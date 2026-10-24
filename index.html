@@ -3,27 +3,65 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#2f7d5b">
+  <meta name="theme-color" content="#1F3B33">
   <title>תזונה ומשקל</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="topbar">
     <h1 id="screen-title">ראשי</h1>
+    <span id="sync-badge" class="sync-badge" hidden></span>
   </header>
 
   <main id="app">
     <!-- ראשי -->
     <section class="screen" data-screen="home">
-      <div class="card">
-        <h2 id="home-hello">שלום</h2>
-        <p id="home-msg" class="muted"></p>
+      <p id="home-date" class="home-date"></p>
+      <h2 id="home-hello" class="home-hello"></h2>
+      <p id="home-warn" class="banner warn" hidden></p>
+
+      <div id="home-setup" class="card setup" hidden>
+        <p id="home-setup-text"></p>
+        <button type="button" class="btn primary" data-go="settings">למסך ההגדרות</button>
       </div>
+
+      <div id="home-plate" hidden>
+        <div class="plate">
+          <svg viewBox="0 0 42 42" aria-hidden="true">
+            <circle class="plate-rim" cx="21" cy="21" r="16"/>
+            <circle class="plate-arc protein" cx="21" cy="21" r="16"/>
+            <circle class="plate-arc carbs" cx="21" cy="21" r="16"/>
+            <circle class="plate-arc fat" cx="21" cy="21" r="16"/>
+          </svg>
+          <div class="plate-mid">
+            <b id="plate-num"></b>
+            <span id="plate-label"></span>
+          </div>
+        </div>
+        <p id="plate-sub" class="plate-sub"></p>
+        <div class="macros" id="macros"></div>
+      </div>
+
+      <div class="tiles">
+        <button type="button" class="tile" id="tile-water"><span>מים</span><b id="water-val"></b><small id="water-goal"></small></button>
+        <button type="button" class="tile" id="tile-coffee"><span>קפה</span><b id="coffee-val"></b><small>כוסות</small></button>
+        <button type="button" class="tile" id="tile-steps" data-go="activity"><span>צעדים</span><b id="steps-val"></b><small>היום</small></button>
+      </div>
+
+      <button type="button" class="weight-card" id="weight-card" data-go="body">
+        <span class="wc-main"><small>משקל</small><b id="wc-weight"></b></span>
+        <span class="wc-side" id="wc-side"></span>
+      </button>
+
+      <button type="button" class="link-row" id="week-link" hidden>סיכום שבועי</button>
     </section>
 
     <!-- ארוחות -->
     <section class="screen" data-screen="meals" hidden>
-      <div class="card"><p class="muted">רישום ארוחות יגיע בשלב 5.</p></div>
+      <div class="card"><p class="muted">רישום ארוחות יגיע בשלב הבא.</p></div>
     </section>
 
     <!-- מדדים -->
@@ -68,7 +106,7 @@
 
         <label class="check" id="cycle-row"><input type="checkbox" name="cycle"> יום מחזור</label>
 
-        <p class="hint muted">אפשר למלא רק חלק מהשדות. מדידה בתאריך קיים מעדכנת אותו.</p>
+        <p class="hint">אפשר למלא רק חלק מהשדות. מדידה בתאריך קיים מעדכנת אותו.</p>
         <button type="submit" class="btn primary">שמירה</button>
         <p id="measure-status" class="status" role="status"></p>
       </form>
@@ -82,7 +120,7 @@
 
     <!-- פעילות -->
     <section class="screen" data-screen="activity" hidden>
-      <div class="card"><p class="muted">דף הפעילות יגיע בשלב 8.</p></div>
+      <div class="card"><p class="muted">דף הפעילות יגיע בהמשך.</p></div>
     </section>
 
     <!-- הגדרות -->
@@ -117,35 +155,90 @@
           </select>
         </label>
 
-        <label>משקל יעד (ק"ג)
-          <input name="goalWeight" type="number" inputmode="decimal" min="35" max="250" step="0.1">
-        </label>
-
-        <label>אחוז שומן יעד (לא חובה)
-          <input name="goalFat" type="number" inputmode="decimal" min="3" max="60" step="0.1">
-        </label>
+        <div class="grid2">
+          <label>משקל יעד (ק"ג)
+            <input name="goalWeight" type="number" inputmode="decimal" min="35" max="250" step="0.1">
+          </label>
+          <label>אחוז שומן יעד
+            <input name="goalFat" type="number" inputmode="decimal" min="3" max="60" step="0.1">
+          </label>
+        </div>
 
         <button type="submit" class="btn primary">שמירה</button>
         <p id="profile-status" class="status" role="status"></p>
       </form>
+
+      <form id="targets-form" class="card" novalidate>
+        <h2>יעדים יומיים</h2>
+        <p id="targets-auto" class="hint"></p>
+        <div class="grid2">
+          <label>קלוריות
+            <input name="kcal" type="number" inputmode="numeric" min="800" max="5000">
+          </label>
+          <label>חלבון (גרם)
+            <input name="protein" type="number" inputmode="numeric" min="20" max="400">
+          </label>
+          <label>שומן (גרם)
+            <input name="fat" type="number" inputmode="numeric" min="10" max="300">
+          </label>
+          <label>פחמימות (גרם)
+            <input name="carbs" type="number" inputmode="numeric" min="0" max="800">
+          </label>
+        </div>
+        <p class="hint">שדה ריק מחושב אוטומטית לפי הפרטים והמדידה האחרונה.</p>
+        <button type="submit" class="btn">שמירת יעדים</button>
+        <p id="targets-status" class="status" role="status"></p>
+      </form>
+
+      <div class="card" id="ai-card">
+        <h2>זיהוי אוכל עם AI</h2>
+        <fieldset class="seg">
+          <legend>ספק</legend>
+          <label><input type="radio" name="aiProvider" value="gemini"> Gemini</label>
+          <label><input type="radio" name="aiProvider" value="claude"> Claude</label>
+        </fieldset>
+        <p id="ai-note" class="hint"></p>
+        <div class="key-row">
+          <label>מפתח API
+            <input id="ai-key" type="password" autocomplete="off" spellcheck="false">
+          </label>
+          <p id="ai-key-saved" class="key-saved" hidden>מפתח שמור ✓ <button type="button" class="btn-text" id="ai-key-clear">מחיקת המפתח</button></p>
+        </div>
+        <p class="hint">המפתח נשמר רק בטלפון. <a id="ai-key-link" target="_blank" rel="noopener"></a></p>
+        <button type="button" class="btn" id="ai-key-save">שמירת מפתח</button>
+        <p id="ai-status" class="status" role="status"></p>
+      </div>
     </section>
   </main>
 
+  <div id="sheet" class="sheet-wrap" hidden>
+    <div class="sheet-dim" data-sheet-close></div>
+    <div class="sheet" role="dialog" aria-modal="true"><div class="sheet-grab"></div><div id="sheet-body"></div></div>
+  </div>
+
   <nav class="tabbar">
-    <button data-go="home" class="active"><span class="ico">🏠</span>ראשי</button>
-    <button data-go="meals"><span class="ico">🍽️</span>ארוחות</button>
-    <button data-go="body"><span class="ico">⚖️</span>מדדים</button>
-    <button data-go="activity"><span class="ico">👟</span>פעילות</button>
-    <button data-go="settings"><span class="ico">⚙️</span>הגדרות</button>
+    <button data-go="home" class="active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/></svg>ראשי</button>
+    <button data-go="meals"><svg viewBox="0 0 24 24"><path d="M7 3v8M5 3v4a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 2-2 6 0 8v10"/></svg>ארוחות</button>
+    <button data-go="body"><svg viewBox="0 0 24 24"><path d="M4 18 9 12l4 3 7-8"/><path d="M4 21h16"/></svg>מדדים</button>
+    <button data-go="activity"><svg viewBox="0 0 24 24"><path d="M8 20c-2 0-3-2-2-5l1-4c1-3 4-3 4 0l-1 5c0 3-1 4-2 4ZM16 14c-2 0-3-2-2-5l1-4c1-3 4-3 4 0l-1 5c0 3-1 4-2 4Z"/></svg>פעילות</button>
+    <button data-go="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>הגדרות</button>
   </nav>
 
   <script src="js/dates.js"></script>
+  <script src="js/config.js"></script>
   <script src="js/state.js"></script>
   <script src="js/db.js"></script>
   <script src="js/store.js"></script>
   <script src="js/targets.js"></script>
+  <script src="js/days.js"></script>
+  <script src="js/foods.js"></script>
+  <script src="js/ai.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/calc.js"></script>
+  <script src="js/ui/common.js"></script>
+  <script src="js/ui/home.js"></script>
+  <script src="js/ui/body.js"></script>
+  <script src="js/ui/settings.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
