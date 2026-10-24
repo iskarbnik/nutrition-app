@@ -35,17 +35,8 @@ function showStatus(el, text, ok) {
   if (ok) el._t = setTimeout(() => { el.textContent = ''; }, 2500);
 }
 
-// תאריך מקומי בפורמט YYYY-MM-DD
-function today() {
-  const d = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function formatDate(iso) {
-  const [y, m, d] = iso.split('-');
-  return `${Number(d)}.${Number(m)}.${y}`;
-}
+const today = () => Dates.localDateKey();
+const formatDate = Dates.formatHe;
 
 // מסך ראשי (זמני עד שלב 6)
 function renderHome() {
@@ -143,7 +134,7 @@ function renderChart() {
   const goal = chartMetric === 'weight' ? p.goalWeight : chartMetric === 'fat' ? p.goalFat : null;
   const showAvg = chartMetric === 'weight';
   const cycleDates = showAvg ? all.filter(m => m.cycle).map(m => m.date) : [];
-  const fromDay = chartRange === 'all' ? null : Charts.toDay(today()) - Number(chartRange);
+  const fromDay = chartRange === 'all' ? null : Dates.toDay(today()) - Number(chartRange);
 
   Charts.line($('#chart'), { data, goal, unit: f.unit, showAvg, cycleDates, fromDay });
 

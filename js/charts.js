@@ -1,10 +1,9 @@
 // גרף קו פשוט ב-SVG: נקודות מדידה, ממוצע 7 ימים, קו יעד וימי מחזור
-const Charts = (() => {
+(function (root) {
+  const Dates = typeof require === 'function' ? require('./dates.js') : root.Dates;
   const NS = 'http://www.w3.org/2000/svg';
   const DAY = 86400000;
 
-  const toDay = iso => Date.UTC(...iso.split('-').map((n, i) => i === 1 ? n - 1 : +n)) / DAY;
-  const fromDay = d => new Date(d * DAY).toISOString().slice(0, 10);
 
   function el(name, attrs, parent) {
     const e = document.createElementNS(NS, name);
@@ -44,7 +43,7 @@ const Charts = (() => {
   function line(container, opts) {
     container.innerHTML = '';
     const pts = opts.data
-      .map(d => ({ day: toDay(d.date), value: d.value }))
+      .map(d => ({ day: Dates.toDay(d.date), value: d.value }))
       .filter(p => opts.fromDay == null || p.day >= opts.fromDay);
 
     if (pts.length === 0) {
@@ -75,7 +74,7 @@ const Charts = (() => {
     // ימי מחזור כרצועות רקע
     const dayW = Math.max(iw / Math.max(x1 - x0, 1), 2);
     for (const iso of opts.cycleDates || []) {
-      const d = toDay(iso);
+      const d = Dates.toDay(iso);
       if (d < x0 - 0.5 || d > x1 + 0.5) continue;
       el('rect', { x: X(d) - dayW / 2, y: m.top, width: dayW, height: ih, class: 'c-cycle' }, svg);
     }
@@ -136,7 +135,7 @@ const Charts = (() => {
       cross.setAttribute('visibility', 'visible');
       ring.setAttribute('cx', cx); ring.setAttribute('cy', cy);
       ring.setAttribute('visibility', 'visible');
-      const iso = fromDay(p.day);
+      const iso = Dates.fromDay(p.day);
       let html = `<b>${fmtShort(p.day)}</b> · ${p.value} ${opts.unit}`;
       if (avg) html += `<br>ממוצע 7 ימים: ${avg[best].value.toFixed(1)}`;
       if (cycleSet.has(iso)) html += '<br>יום מחזור';
@@ -159,5 +158,7 @@ const Charts = (() => {
     container.appendChild(tip);
   }
 
-  return { line, toDay, fromDay, rollingAvg };
-})();
+  const Charts = { line, rollingAvg };
+  if (typeof module !== 'undefined') module.exports = Charts;
+  else root.Charts = Charts;
+})(this);

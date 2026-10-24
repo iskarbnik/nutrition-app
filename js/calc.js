@@ -1,5 +1,7 @@
 // חישובים: מגמה והערכת זמן ליעד
-const Calc = (() => {
+(function (root) {
+  const Dates = typeof require === 'function' ? require('./dates.js') : root.Dates;
+
   const TREND_DAYS = 28; // המגמה נמדדת על 4 השבועות האחרונים
 
   // רגרסיה לינארית: שיפוע ליום וערך בנקודה האחרונה
@@ -21,7 +23,7 @@ const Calc = (() => {
    */
   function trend(data, goal) {
     if (data.length < 3) return null;
-    const pts = data.map(d => ({ day: Charts.toDay(d.date), value: d.value }));
+    const pts = data.map(d => ({ day: Dates.toDay(d.date), value: d.value }));
     const lastDay = pts[pts.length - 1].day;
     const recent = pts.filter(p => p.day > lastDay - TREND_DAYS);
     if (recent.length < 3 || lastDay - recent[0].day < 7) return null;
@@ -37,10 +39,12 @@ const Calc = (() => {
     res.approaching = wantDown ? slope < -0.001 : slope > 0.001;
     if (res.approaching) {
       res.days = Math.ceil((goal - current) / slope);
-      res.etaDate = Charts.fromDay(lastDay + res.days);
+      res.etaDate = Dates.fromDay(lastDay + res.days);
     }
     return res;
   }
 
-  return { trend };
-})();
+  const Calc = { trend };
+  if (typeof module !== 'undefined') module.exports = Calc;
+  else root.Calc = Calc;
+})(this);
