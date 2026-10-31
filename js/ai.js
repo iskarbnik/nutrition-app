@@ -149,6 +149,7 @@
     if (res.status === 401 || res.status === 403) return fail('bad-key', res.status, detail);
     if (res.status === 429) return Object.assign(fail('quota', res.status, detail), quotaInfo(body));
     if (res.status === 400 && /api key/i.test(text)) return fail('bad-key', res.status, detail);
+    if (res.status === 503 || res.status === 529) return fail('busy', res.status, detail);
     return fail('ai-failed', res.status, detail);
   }
 

@@ -212,3 +212,8 @@ test('addLog keeps the newest ten entries first', () => {
   assert.equal(log[0].n, 11);
   assert.equal(log[9].n, 2);
 });
+
+test('an overloaded provider is busy, for each provider', async () => {
+  await assert.rejects(AI.ask('gemini', 'k', input, fakeFetch(503, { error: { message: 'high demand' } })), { message: 'busy' });
+  await assert.rejects(AI.ask('claude', 'k', input, fakeFetch(529, { error: { message: 'overloaded' } })), { message: 'busy' });
+});

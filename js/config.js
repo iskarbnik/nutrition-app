@@ -2,7 +2,7 @@
 (function (root) {
   const Config = {
     AI_MODELS: {
-      gemini: 'gemini-3.8-flash',
+      gemini: 'gemini-3.5-flash-lite',
       claude: 'claude-sonnet-5-5',
     },
     // תקרה לתשובה של Gemini, כולל טוקני חשיבה, כדי שתשובה שרצה בלי סוף לא תאכל את המכסה
