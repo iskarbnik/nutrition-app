@@ -129,3 +129,86 @@ test('a request with no answer stops after the timeout with timeout', async () =
   });
   await assert.rejects(AI.ask('gemini', 'k', { text: 'x' }, hang, 30), { message: 'timeout' });
 });
+
+test('gemini requests always cap output and lower thinking', () => {
+  for (const inp of [{ text: 'x' }, { text: 'x', json: true }]) {
+    const g = AI.adapters.gemini.build('gemini-x', inp, 'k').body.generationConfig;
+    assert.ok(g.maxOutputTokens > 0 && g.maxOutputTokens <= 8192);
+    assert.equal(g.thinkingConfig.thinkingLevel, 'LOW');
+  }
+});
+
+test('a response body that stalls also stops at the timeout', async () => {
+  const stall = async (url, opts) => ({
+    ok: true, status: 200,
+    json: () => new Promise((_, reject) => {
+      opts.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+    }),
+  });
+  await assert.rejects(AI.ask('gemini', 'k', { text: 'x' }, stall, 30), { message: 'timeout' });
+});
+
+test('an answer cut off at the output cap is too-long, not a parse failure', async () => {
+  const g = { candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: '{"items":[' }] } }] };
+  await assert.rejects(AI.ask('gemini', 'k', input, fakeFetch(200, g)), { message: 'too-long' });
+  const noParts = { candidates: [{ finishReason: 'MAX_TOKENS', content: {} }] };
+  await assert.rejects(AI.ask('gemini', 'k', input, fakeFetch(200, noParts)), { message: 'too-long' });
+  const c = { stop_reason: 'max_tokens', content: [{ type: 'text', text: '{"items":[' }] };
+  await assert.rejects(AI.ask('claude', 'k', input, fakeFetch(200, c)), { message: 'too-long' });
+});
+
+test('every call reports timing and tokens, never the key or the content', async () => {
+  const seen = [];
+  AI.onCall = e => seen.push(e);
+  try {
+    const ok = {
+      candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'SECRET-ANSWER' }] } }],
+      usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20, thoughtsTokenCount: 30, totalTokenCount: 60 },
+    };
+    await AI.ask('gemini', 'SECRET-KEY', { text: 'SECRET-TEXT' }, fakeFetch(200, ok));
+    await assert.rejects(AI.ask('gemini', 'SECRET-KEY', { text: 'x' }, fakeFetch(429, {})));
+  } finally {
+    AI.onCall = null;
+  }
+  assert.equal(seen.length, 2);
+  assert.equal(seen[0].provider, 'gemini');
+  assert.equal(seen[0].status, 200);
+  assert.equal(seen[0].finish, 'STOP');
+  assert.equal(seen[0].thoughts, 30);
+  assert.equal(seen[0].total, 60);
+  assert.equal(seen[0].code, 'ok');
+  assert.ok(seen[0].ms >= 0);
+  assert.equal(seen[1].code, 'quota');
+  const all = JSON.stringify(seen);
+  assert.ok(!all.includes('SECRET'));
+});
+
+test('a logging hook that throws does not break the call', async () => {
+  AI.onCall = () => { throw new Error('boom'); };
+  try {
+    const r = await AI.ask('gemini', 'k', input, fakeFetch(200, { candidates: [{ content: { parts: [{ text: 'G' }] } }] }));
+    assert.equal(r, 'G');
+  } finally {
+    AI.onCall = null;
+  }
+});
+
+test('quota errors say whether the limit is per day or per minute', async () => {
+  const body = (quotaId, retryDelay) => ({ error: { message: 'over', details: [
+    { '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: [{ quotaId }] },
+    { '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay },
+  ] } });
+  await assert.rejects(AI.ask('gemini', 'k', input, fakeFetch(429, body('GenerateRequestsPerDayPerProjectPerModel-FreeTier', '50s'))),
+    e => e.message === 'quota' && e.quotaKind === 'day');
+  await assert.rejects(AI.ask('gemini', 'k', input, fakeFetch(429, body('GenerateRequestsPerMinutePerProjectPerModel-FreeTier', '34s'))),
+    e => e.message === 'quota' && e.quotaKind === 'minute' && e.retrySec === 34);
+  await assert.rejects(AI.ask('gemini', 'k', input, fakeFetch(429, {})), e => e.message === 'quota' && !e.quotaKind);
+});
+
+test('addLog keeps the newest ten entries first', () => {
+  let log = [];
+  for (let i = 0; i < 12; i++) log = AI.addLog(log, { n: i });
+  assert.equal(log.length, 10);
+  assert.equal(log[0].n, 11);
+  assert.equal(log[9].n, 2);
+});

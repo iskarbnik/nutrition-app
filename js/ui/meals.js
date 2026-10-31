@@ -234,17 +234,17 @@
       if (!items.length) return viewError('empty', error ? `התשובה: ${text.slice(0, 120)}` : '');
       viewReview(items);
     } catch (err) {
-      viewError(err.message, err.status ? `${err.status}: ${err.detail}` : '');
+      viewError(err.message, aiErrorDetail(err), aiErrorText(err, ''));
     }
   }
 
   // detail: פרטי השגיאה מהספק, מוצגים בקטן כדי שאפשר יהיה להבין ולדווח
-  function viewError(code, detail = '') {
+  function viewError(code, detail = '', text = '') {
     const msg = code === 'no-key'
       ? 'כדי לחשב עם AI צריך להזין מפתח בהגדרות.'
       : code === 'empty'
         ? 'לא זוהה אוכל. אפשר לתאר אחרת או לחפש ברשימה.'
-        : AI_ERRORS[code] || AI_ERRORS['ai-failed'];
+        : text || AI_ERRORS[code] || AI_ERRORS['ai-failed'];
     const toSettings = code === 'no-key' || code === 'bad-key' || code === 'quota';
     const root = UI.sheet.open(`
       <p class="sheet-msg">${msg}</p>

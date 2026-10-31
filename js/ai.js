@@ -30,7 +30,11 @@
         if (input.imageBase64) parts.push({ inline_data: { mime_type: input.mediaType || 'image/jpeg', data: input.imageBase64 } });
         const body = { contents: [{ role: 'user', parts }] };
         if (input.system) body.systemInstruction = { parts: [{ text: input.system }] };
-        if (input.json) body.generationConfig = { responseMimeType: 'application/json' };
+        body.generationConfig = {
+          maxOutputTokens: Config.GEMINI_MAX_OUTPUT,
+          thinkingConfig: { thinkingLevel: Config.GEMINI_THINKING },
+        };
+        if (input.json) body.generationConfig.responseMimeType = 'application/json';
         return {
           url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -38,6 +42,11 @@
         };
       },
       extract: json => json.candidates[0].content.parts.map(p => p.text || '').join(''),
+      usage(json) {
+        const u = json.usageMetadata || {};
+        const c = json.candidates && json.candidates[0];
+        return { finish: c && c.finishReason, output: u.candidatesTokenCount, thoughts: u.thoughtsTokenCount, total: u.totalTokenCount, cut: !!c && c.finishReason === 'MAX_TOKENS' };
+      },
     },
     claude: {
       build(model, input, apiKey) {
@@ -60,6 +69,10 @@
         };
       },
       extract: json => json.content.filter(c => c.type === 'text').map(c => c.text).join(''),
+      usage(json) {
+        const u = json.usage || {};
+        return { finish: json.stop_reason, output: u.output_tokens, total: (u.input_tokens || 0) + (u.output_tokens || 0), cut: json.stop_reason === 'max_tokens' };
+      },
     },
   };
 
@@ -67,8 +80,22 @@
   // הדבקה בטלפון מוסיפה לפעמים סימני כיוון נסתרים או טקסט, והדפדפן מסרב לשלוח כותרת כזו
   const cleanKey = key => String(key || '').replace(/[^A-Za-z0-9_.-]/g, '');
 
-  // timeoutMs: בלי תשובה עד אז מפסיקים, כדי שהמסך לא ייתקע על "מחשב..."
+  // timeoutMs: בלי תשובה מלאה עד אז מפסיקים, כדי שהמסך לא ייתקע על "מחשב..."
   async function ask(provider, apiKey, input, fetchImpl, timeoutMs = 60000) {
+    const started = Date.now();
+    const entry = { t: started, provider, code: 'ok' };
+    try {
+      return await request(provider, apiKey, input, fetchImpl, timeoutMs, entry);
+    } catch (e) {
+      entry.code = e.message;
+      throw e;
+    } finally {
+      entry.ms = Date.now() - started;
+      report(entry);
+    }
+  }
+
+  async function request(provider, apiKey, input, fetchImpl, timeoutMs, entry) {
     const doFetch = fetchImpl || ((...a) => fetch(...a));
     const adapter = adapters[provider];
     const key = cleanKey(apiKey);
@@ -76,33 +103,78 @@
     const req = adapter.build(Config.AI_MODELS[provider], input, key);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-    let res;
     try {
-      res = await doFetch(req.url, { method: 'POST', headers: req.headers, body: JSON.stringify(req.body), signal: ctrl.signal });
-    } catch {
-      throw new Error(ctrl.signal.aborted ? 'timeout' : 'offline');
+      let res;
+      try {
+        res = await doFetch(req.url, { method: 'POST', headers: req.headers, body: JSON.stringify(req.body), signal: ctrl.signal });
+      } catch {
+        throw new Error(ctrl.signal.aborted ? 'timeout' : 'offline');
+      }
+      entry.status = res.status;
+      if (!res.ok) throw await httpError(res, ctrl);
+      let json;
+      try {
+        json = await res.json();
+      } catch {
+        if (ctrl.signal.aborted) throw new Error('timeout');
+        throw fail('ai-failed', res.status, 'תשובה לא צפויה');
+      }
+      const usage = adapter.usage(json);
+      Object.assign(entry, { finish: usage.finish, output: usage.output, thoughts: usage.thoughts, total: usage.total });
+      if (usage.cut) throw fail('too-long', res.status, usage.finish);
+      try {
+        return adapter.extract(json);
+      } catch {
+        // למשל תשובה שנחסמה, בלי טקסט
+        throw fail('ai-failed', res.status, usage.finish ? `תשובה ריקה (${usage.finish})` : 'תשובה לא צפויה');
+      }
     } finally {
       clearTimeout(timer);
     }
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      let detail = text.slice(0, 200);
-      try { detail = JSON.parse(text).error.message || detail; } catch { /* נשאר הטקסט */ }
-      if (res.status === 401 || res.status === 403) throw fail('bad-key', res.status, detail);
-      if (res.status === 429) throw fail('quota', res.status, detail);
-      if (res.status === 400 && /api key/i.test(text)) throw fail('bad-key', res.status, detail);
-      throw fail('ai-failed', res.status, detail);
-    }
-    let json;
-    try {
-      json = await res.json();
-      return adapter.extract(json);
-    } catch {
-      // למשל תשובה שנחסמה או נקטעה, בלי טקסט
-      const reason = json && json.candidates && json.candidates[0] && json.candidates[0].finishReason;
-      throw fail('ai-failed', res.status, reason ? `תשובה ריקה (${reason})` : 'תשובה לא צפויה');
-    }
   }
+
+  async function httpError(res, ctrl) {
+    let text = '';
+    try {
+      text = await res.text();
+    } catch {
+      if (ctrl.signal.aborted) return new Error('timeout');
+    }
+    let detail = text.slice(0, 200);
+    let body = null;
+    try {
+      body = JSON.parse(text);
+      detail = body.error.message || detail;
+    } catch { /* נשאר הטקסט */ }
+    if (res.status === 401 || res.status === 403) return fail('bad-key', res.status, detail);
+    if (res.status === 429) return Object.assign(fail('quota', res.status, detail), quotaInfo(body));
+    if (res.status === 400 && /api key/i.test(text)) return fail('bad-key', res.status, detail);
+    return fail('ai-failed', res.status, detail);
+  }
+
+  // Gemini מפרט ב-429 איזו מגבלה נגמרה ומתי לנסות שוב. בלי הפרטים נשארת שגיאת מכסה רגילה
+  function quotaInfo(body) {
+    const details = (body && body.error && Array.isArray(body.error.details)) ? body.error.details : [];
+    const info = {};
+    for (const d of details) {
+      for (const v of (d && Array.isArray(d.violations) ? d.violations : [])) {
+        const id = String((v && v.quotaId) || '');
+        if (/PerDay/i.test(id)) info.quotaKind = 'day';
+        else if (/PerMinute/i.test(id) && !info.quotaKind) info.quotaKind = 'minute';
+      }
+      const delay = d && /^(\d+(?:\.\d+)?)s$/.exec(String(d.retryDelay || ''));
+      if (delay) info.retrySec = Math.ceil(Number(delay[1]));
+    }
+    return info;
+  }
+
+  // יומן לאבחון: זמן, סטטוס וטוקנים בלבד. בלי מפתח ובלי תוכן
+  function report(entry) {
+    if (!AI.onCall) return;
+    try { AI.onCall(entry); } catch { /* יומן שנכשל לא מפיל קריאה */ }
+  }
+
+  const addLog = (log, entry, max = 10) => [entry, ...log].slice(0, max);
 
   // שגיאה עם הפרטים מהספק, כדי להציג למשתמש מה קרה
   function fail(code, status, detail) {
@@ -168,7 +240,7 @@
     });
   }
 
-  const AI = { mealPrompt, tipPrompt, adapters, cleanKey, ask, parseMeal, parseTip, resizeImage };
+  const AI = { mealPrompt, tipPrompt, adapters, cleanKey, ask, addLog, onCall: null, parseMeal, parseTip, resizeImage };
   if (typeof module !== 'undefined') module.exports = AI;
   else root.AI = AI;
 })(this);

@@ -158,29 +158,38 @@
     const provider = Store.get().settings.aiProvider;
     const key = await Secrets.get(PROVIDERS[provider].key);
     if (!key) return showStatus(status, 'צריך להזין מפתח AI למטה', false);
-    // הודעת ההמתנה נשארת עד שמגיעה תשובה
-    status.textContent = 'מחשב...';
-    status.className = 'status ok';
-    clearTimeout(status._t);
+    showWaiting(status, 'מחשב...');
     const btn = $('#coffee-ai');
     btn.disabled = true;
     try {
-      const { items } = AI.parseMeal(await AI.ask(provider, key, { system: AI.mealPrompt, json: true, text: `כוס אחת: ${name}` }));
-      if (!items.length) return showStatus(status, 'לא הצלחתי לחשב. אפשר למלא ידנית.', false);
+      const text = await AI.ask(provider, key, { system: AI.mealPrompt, json: true, text: `כוס אחת: ${name}` });
+      const { items, error } = AI.parseMeal(text);
+      if (!items.length) {
+        return showStatus(status, `לא הצלחתי לחשב. אפשר למלא ידנית.${error ? ` (התשובה: ${text.slice(0, 80)})` : ''}`, false);
+      }
       for (const k of COFFEE_FIELDS) form[k].value = Math.round(items.reduce((a, x) => a + x[k], 0) * 10) / 10;
       showStatus(status, 'אפשר לבדוק ולהוסיף', true);
     } catch (err) {
-      const msg = {
-        offline: 'אין חיבור לאינטרנט',
-        'bad-key': 'המפתח של ספק ה-AI לא תקין',
-        quota: 'נגמרה המכסה של הספק. אפשר לנסות מאוחר יותר.',
-        timeout: 'הספק לא ענה בזמן. אפשר לנסות שוב.',
-      }[err.message] || 'החישוב נכשל. אפשר למלא ידנית.';
-      const detail = err.status ? `${err.status}: ${err.detail}` : !['ai-failed', 'timeout', 'offline', 'bad-key', 'quota'].includes(err.message) && err.message;
+      const msg = aiErrorText(err, 'החישוב נכשל. אפשר למלא ידנית.');
+      const detail = aiErrorDetail(err);
       showStatus(status, detail ? `${msg} (${detail})` : msg, false);
     } finally {
       btn.disabled = false;
     }
+  }
+
+  // יומן הקריאות האחרונות: עוזר להבין למה AI נכשל, בלי מפתח ובלי תוכן
+  function fillAILog() {
+    const rows = AILog.read().map(e => {
+      const when = new Date(e.t).toLocaleString('he-IL', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const parts = [when, e.provider, `${(e.ms / 1000).toFixed(1)} שנ'`];
+      if (e.code !== 'ok') parts.push(e.code);
+      if (e.status) parts.push(`סטטוס ${e.status}`);
+      if (e.finish) parts.push(e.finish);
+      if (e.total) parts.push(`${e.total} טוקנים${e.thoughts ? `, מתוכם ${e.thoughts} חשיבה` : ''}`);
+      return `<li dir="auto">${esc(parts.join(', '))}</li>`;
+    }).join('');
+    $('#ai-log-list').innerHTML = rows || '<li>עוד לא היו קריאות.</li>';
   }
 
   function render() {
@@ -205,6 +214,7 @@
     });
     $('#coffee-form').addEventListener('submit', onCoffeeSubmit);
     $('#coffee-ai').addEventListener('click', onCoffeeAI);
+    $('#ai-log').addEventListener('toggle', fillAILog);
     $('#ai-key-save').addEventListener('click', onKeySave);
     $('#ai-key-clear').addEventListener('click', onKeyClear);
   }

@@ -21,6 +21,47 @@ function showStatus(el, text, ok) {
   if (ok) el._t = setTimeout(() => { el.textContent = ''; }, 2500);
 }
 
+// הודעת המתנה: נשארת עד שמגיעה תשובה
+function showWaiting(el, text) {
+  el.textContent = text;
+  el.className = 'status ok';
+  clearTimeout(el._t);
+}
+
+// טקסט לשגיאת AI. fallback: כשאין הודעה מיוחדת לשגיאה
+function aiErrorText(err, fallback) {
+  if (err.message === 'quota') {
+    if (err.quotaKind === 'minute') return `עברנו את מגבלת הקריאות לדקה. אפשר לנסות שוב בעוד ${err.retrySec || 60} שניות.`;
+    if (err.quotaKind === 'day') return 'נגמרה המכסה היומית של הספק. היא מתחדשת בבוקר, לפי שעון ישראל.';
+    return 'נגמרה המכסה של הספק. אפשר לנסות מאוחר יותר או להחליף ספק בהגדרות.';
+  }
+  return {
+    offline: 'אין חיבור לאינטרנט.',
+    'bad-key': 'המפתח של ספק ה-AI לא תקין. אפשר לבדוק אותו בהגדרות.',
+    timeout: 'הספק לא ענה בזמן. אפשר לנסות שוב.',
+    'too-long': 'התשובה של הספק נקטעה באמצע. אפשר לקצר את התיאור או לנסות שוב.',
+  }[err.message] || fallback;
+}
+
+const aiErrorDetail = err => (err.status ? `${err.status}: ${err.detail}` : '');
+
+// יומן קריאות AI, בטלפון בלבד: לא חלק מהנתונים ולא עובר לדרייב
+const AILog = {
+  KEY: 'ai-log',
+  read() {
+    try {
+      const list = JSON.parse(localStorage.getItem(this.KEY));
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  },
+  add(entry) {
+    try { localStorage.setItem(this.KEY, JSON.stringify(AI.addLog(this.read(), entry))); } catch { /* אפשר בלי יומן */ }
+  },
+};
+AI.onCall = entry => AILog.add(entry);
+
 // כפתור לפעולה שאי אפשר לבטל: לחיצה אחת פותחת חלון אישור
 function confirmTap(btn, onConfirm, label = 'מחיקה', question = 'בטוח שרוצים למחוק?') {
   btn.textContent = label;

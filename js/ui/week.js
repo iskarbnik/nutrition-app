@@ -42,14 +42,17 @@
     const provider = Store.get().settings.aiProvider;
     const key = await Secrets.get(Screens.settings.PROVIDERS[provider].key);
     if (!key) return showStatus(status, 'כדי לקבל טיפ צריך להזין מפתח AI בהגדרות.', false);
-    showStatus(status, 'מכין טיפ...', true);
+    showWaiting(status, 'מכין טיפ...');
+    const btn = $('#get-tip', root);
+    btn.disabled = true;
     try {
       const tip = AI.parseTip(await AI.ask(provider, key, { text: AI.tipPrompt(w, Store.get().profile.sex) }));
       if (!tip) throw new Error('ai-failed');
       Store.mutate(s => { s.weekTips[w.from] = tip; });
       open();
     } catch (err) {
-      showStatus(status, err.message === 'offline' ? 'אין חיבור לאינטרנט.' : 'לא הצלחתי להכין טיפ. אפשר לנסות שוב.', false);
+      showStatus(status, aiErrorText(err, 'לא הצלחתי להכין טיפ. אפשר לנסות שוב.'), false);
+      btn.disabled = false;
     }
   }
 
